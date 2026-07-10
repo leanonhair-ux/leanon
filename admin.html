@@ -76,6 +76,18 @@
   .delbtn:hover{background:#fbeae8}
   .empty{text-align:center; color:var(--muted); padding:80px 20px; font-size:15px}
 
+  /* 삭제 확인 모달 */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.42); display:none; align-items:center; justify-content:center; z-index:100; padding:20px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff; border-radius:16px; padding:24px 22px 18px; max-width:340px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-title{font-size:17px; font-weight:800; margin-bottom:8px}
+  .modal-body{font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:20px}
+  .modal-actions{display:flex; gap:10px}
+  .mbtn{flex:1; border:none; border-radius:10px; padding:13px; font-size:14.5px; font-weight:700; cursor:pointer; font-family:inherit}
+  .mbtn.cancel{background:#f0ece4; color:var(--ink)}
+  .mbtn.danger{background:#c0392b; color:#fff}
+  .mbtn:disabled{opacity:.5}
+
   /* 모바일 최적화 */
   @media (max-width:600px){
     .topbar{padding:12px 14px; gap:8px}
@@ -131,6 +143,18 @@
   <div class="grid" id="grid"></div>
 </div>
 
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal">
+    <div class="modal-title">상담 삭제</div>
+    <div class="modal-body" id="delMsg">이 상담을 삭제할까요?</div>
+    <div class="modal-actions">
+      <button class="mbtn cancel" id="delCancel">취소</button>
+      <button class="mbtn danger" id="delConfirm">삭제</button>
+    </div>
+  </div>
+</div>
+
 <script>
   /* ═══════ 설정 ═══════ */
   const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";        // Supabase Project URL
@@ -147,6 +171,7 @@
   let statusFilter = "전체";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
+  let pendingDelete = null;
 
   const $ = id => document.getElementById(id);
   const esc = s => (s==null?"":String(s)).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -211,6 +236,25 @@
     if(toDate && t > new Date(toDate+"T23:59:59.999")) return false;
     return true;
   }
+
+  /* ── 삭제 모달 ── */
+  function openDelModal(r){
+    pendingDelete = r;
+    $("delMsg").textContent = `'${r.name||"이 고객"}' 님의 상담을 삭제할까요? 삭제하면 복구할 수 없습니다.`;
+    $("delConfirm").disabled = false; $("delConfirm").textContent = "삭제";
+    $("delModal").classList.add("open");
+  }
+  function closeDelModal(){ $("delModal").classList.remove("open"); pendingDelete = null; }
+  $("delCancel").onclick = closeDelModal;
+  $("delModal").onclick = e => { if(e.target===$("delModal")) closeDelModal(); };
+  $("delConfirm").onclick = async () => {
+    const r = pendingDelete; if(!r) return;
+    $("delConfirm").disabled = true; $("delConfirm").textContent = "삭제 중...";
+    const { error } = await sb.from("consultations").delete().eq("id", r.id);
+    if(error){ alert("삭제 오류: "+error.message); $("delConfirm").disabled=false; $("delConfirm").textContent="삭제"; return; }
+    rows = rows.filter(x => x.id !== r.id);
+    closeDelModal(); render();
+  };
 
   /* ── 데이터 로드 ── */
   async function load(){
@@ -305,14 +349,8 @@
       if(error) return alert("저장 오류: "+error.message);
       r.designer_note=note; r.status="상담완료"; render();
     };
-    // 삭제
-    card.querySelector(".delbtn").onclick = async () => {
-      if(!confirm(`'${r.name||"이 고객"}' 상담을 삭제할까요?\n삭제하면 복구할 수 없습니다.`)) return;
-      const { error } = await sb.from("consultations").delete().eq("id", r.id);
-      if(error) return alert("삭제 오류: "+error.message);
-      rows = rows.filter(x => x.id !== r.id);
-      render();
-    };
+    // 삭제 (모달)
+    card.querySelector(".delbtn").onclick = () => openDelModal(r);
   }
 
   init();
