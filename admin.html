@@ -14,6 +14,7 @@
   /* 로그인 */
   #loginView{max-width:360px; margin:0 auto; padding:110px 24px}
   #loginView h1{font-size:26px; letter-spacing:5px; text-align:center; margin-bottom:6px}
+  .loginlogo{width:160px; max-width:62%; height:auto; display:block; margin:0 auto 10px}
   #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px}
   #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
        padding:14px; font-size:15px; margin-bottom:10px; font-family:inherit}
@@ -26,6 +27,7 @@
   .topbar{position:sticky; top:0; z-index:5; background:rgba(246,244,240,.9); backdrop-filter:blur(8px);
           border-bottom:1px solid var(--line); padding:14px 18px; display:flex; align-items:center; gap:12px}
   .topbar .logo{font-size:18px; letter-spacing:3px; font-weight:800}
+  .topbar .toplogo{height:22px; width:auto; display:block}
   .topbar .sub{color:var(--muted); font-size:13px}
   .topbar .spacer{flex:1}
   .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
@@ -76,7 +78,7 @@
 
 <!-- 로그인 -->
 <div id="loginView">
-  <h1>LEANON</h1>
+  <img class="loginlogo" src="logo.png" alt="LEANON" onerror="this.outerHTML='&lt;h1&gt;LEANON&lt;/h1&gt;'" />
   <p>상담 관리 · 직원 전용</p>
   <input id="email" type="email" placeholder="이메일" autocomplete="username" />
   <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
@@ -87,7 +89,7 @@
 <!-- 대시보드 -->
 <div id="appView">
   <div class="topbar">
-    <span class="logo">LEANON</span>
+    <img class="toplogo" src="logo.png" alt="LEANON" onerror="this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'" />
     <span class="sub">상담 관리</span>
     <span class="spacer"></span>
     <button id="refreshBtn">새로고침</button>
