@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>LEANON — 상담지</title>
+<style>
+  :root{
+    color-scheme:light;
+    --ink:#1c1a17; --muted:#8a8377; --line:#e2ddd5; --bg:#ffffff; --radius:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:32px 22px 120px}
+  .brand{text-align:center; margin-bottom:26px}
+  .brand img{width:96px; height:auto}
+  .title{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+         padding-bottom:12px; border-bottom:2px solid var(--ink); margin-top:22px}
+  .title h1{font-size:20px; letter-spacing:3px; font-weight:700}
+  .title span{font-size:11px; color:var(--muted); text-align:right; line-height:1.4}
+  .sec{margin-top:30px}
+  .sec > h2{font-size:13px; letter-spacing:2.5px; font-weight:700; margin-bottom:16px}
+  .field{margin-bottom:20px}
+  .field > label.q{display:block; font-size:14.5px; font-weight:600; margin-bottom:9px}
+  .hint{color:var(--muted); font-weight:400; font-size:12px; margin-left:4px}
+  .in{width:100%; border:none; border-bottom:1px solid var(--line); background:transparent;
+      font-size:15px; padding:9px 2px; color:var(--ink); font-family:inherit}
+  .in:focus{outline:none; border-bottom-color:var(--ink)}
+  .row{display:flex; gap:12px}
+  .row > *{flex:1}
+  .inline{display:flex; align-items:center; gap:8px}
+  .inline .in{flex:0 0 72px; text-align:center}
+  .inline .unit{font-size:14px; color:var(--muted)}
+  .opts{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{position:relative; border:1px solid var(--line); border-radius:999px;
+        padding:10px 15px; font-size:14px; cursor:pointer; user-select:none; transition:.15s}
+  .chip input{position:absolute; opacity:0; pointer-events:none}
+  .chip:has(input:checked){background:var(--ink); color:#fff; border-color:var(--ink)}
+  .chip.disabled{opacity:.35; pointer-events:none}
+  textarea.in{border:1px solid var(--line); border-radius:var(--radius); min-height:78px; padding:12px; resize:vertical}
+  .consent{margin-top:34px; padding-top:20px; border-top:1px solid var(--line)}
+  .consent .q{font-size:14.5px; font-weight:600}
+  .consent .note{color:var(--muted); font-size:12px; margin:6px 0 12px}
+  .submitbar{position:fixed; left:0; right:0; bottom:0; background:var(--bg);
+             border-top:1px solid var(--line); padding:14px 22px calc(14px + env(safe-area-inset-bottom));}
+  .submitbar .inner{max-width:560px; margin:0 auto}
+  button.submit{width:100%; border:none; border-radius:12px; background:var(--ink); color:#fff;
+                font-size:16px; font-weight:700; padding:16px 0; cursor:pointer; font-family:inherit}
+  button.submit:disabled{opacity:.4}
+  .done{display:none; text-align:center; padding:80px 22px}
+  .done h2{font-size:22px; margin-bottom:12px}
+  .done p{color:var(--muted); font-size:15px; line-height:1.7}
+  .footer-tag{text-align:center; margin-top:40px; color:var(--muted); font-size:12px; letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="formView">
+  <div class="brand"><div class="title" style="border:none;justify-content:center;margin:0"><h1 style="font-size:34px;letter-spacing:6px">LEANON</h1></div></div>
+
+  <div class="title">
+    <h1>ABOUT CLIENT</h1>
+    <span>원활한 시술을 위해<br/>고객님의 의견을 작성 부탁드립니다.</span>
+  </div>
+
+  <form id="consultForm">
+    <div class="sec">
+      <h2>INFORMATION</h2>
+      <div class="field">
+        <label class="q" for="name">고객 성명</label>
+        <input class="in" id="name" name="name" type="text" required autocomplete="name" />
+      </div>
+      <div class="field">
+        <label class="q" for="birth">생년월일</label>
+        <input class="in" id="birth" name="birth" type="text" inputmode="numeric" placeholder="예) 1996.03.21" />
+      </div>
+      <div class="field">
+        <label class="q">거주 지역</label>
+        <div class="row">
+          <input class="in" name="region_si" type="text" placeholder="시 (예: 서울)" />
+          <input class="in" name="region_gu" type="text" placeholder="구 (예: 성동구)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>CHECK LIST <span class="hint">마지막 시술 시기</span></h2>
+      <div class="field">
+        <label class="q">컷 (Cut)</label>
+        <div class="inline"><input class="in" name="last_cut" type="number" inputmode="numeric" min="0" /><span class="unit">개월 전</span></div>
+      </div>
+      <div class="field">
+        <label class="q">펌 (Perm)</label>
+        <div class="inline"><input class="in" name="last_perm" type="number" inputmode="numeric" min="0" /><span class="unit">개월 전</span></div>
+      </div>
+      <div class="field">
+        <label class="q">컬러 (Color)</label>
+        <div class="inline" style="margin-bottom:10px"><input class="in" name="last_color" type="number" inputmode="numeric" min="0" /><span class="unit">개월 전</span></div>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="color_type" value="탈색"><span>탈색</span></label>
+          <label class="chip"><input type="radio" name="color_type" value="톤다운"><span>톤다운</span></label>
+          <label class="chip"><input type="radio" name="color_type" value="블랙"><span>블랙</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>CUSTOMER TYPE</h2>
+      <div class="field">
+        <label class="q">디자인 레퍼런스</label>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="reference" value="사진 있어요"><span>사진 있어요</span></label>
+          <label class="chip"><input type="radio" name="reference" value="추천 받고 싶어요"><span>추천 받고 싶어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q">오늘 시술 진행</label>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="today" value="예약한 시술만 원해요"><span>예약한 시술만 원해요</span></label>
+          <label class="chip"><input type="radio" name="today" value="추가 시술 필요하면 원해요"><span>추가 시술 필요하면 원해요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q">선호하는 기장감</label>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="length" value="숏"><span>숏</span></label>
+          <label class="chip"><input type="radio" name="length" value="단발"><span>단발</span></label>
+          <label class="chip"><input type="radio" name="length" value="중단발"><span>중단발</span></label>
+          <label class="chip"><input type="radio" name="length" value="미디움"><span>미디움</span></label>
+          <label class="chip"><input type="radio" name="length" value="롱"><span>롱</span></label>
+          <label class="chip"><input type="radio" name="length" value="상관없어요"><span>상관없어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q">추구하는 이미지 <span class="hint">최대 2개</span></label>
+        <div class="opts" data-max="2">
+          <label class="chip"><input type="checkbox" name="image" value="사랑스러운"><span>사랑스러운</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="여성스러운"><span>여성스러운</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="모던/고급"><span>모던/고급</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="힙/트렌디"><span>힙/트렌디</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="영/캐주얼"><span>영/캐주얼</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="개성/유니크"><span>개성/유니크</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="시크/전문적인"><span>시크/전문적인</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="중성적인"><span>중성적인</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q">가장 고민 &amp; 보완하고 싶은 점</label>
+        <div class="opts">
+          <label class="chip"><input type="checkbox" name="concern" value="턱"><span>턱</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="광대"><span>광대</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="얼굴 길이"><span>얼굴 길이</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="목 길이"><span>목 길이</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="두상"><span>두상</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="모질"><span>모질</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="모르겠어요"><span>모르겠어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q">평소 스타일링</label>
+        <div class="opts">
+          <label class="chip"><input type="checkbox" name="styling" value="롤드라이"><span>롤드라이</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="고데기"><span>고데기</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="에어랩"><span>에어랩</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="말리기만 해요"><span>말리기만 해요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="거의 묶어요"><span>거의 묶어요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="가끔 묶어요"><span>가끔 묶어요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="안 묶어요"><span>안 묶어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q" for="past">과거 시술 시 불만족 했던 점 <span class="hint">헤어 디자인 / 서비스 등</span></label>
+        <textarea class="in" id="past" name="past" placeholder="자유롭게 작성해 주세요"></textarea>
+      </div>
+    </div>
+
+    <div class="consent">
+      <div class="q">개인정보 수집 및 활용에 동의하시겠습니까?</div>
+      <div class="note">동의를 거부할 수 있으며, 거부 시 프로모션 혜택 및 이벤트 정보는 제공되지 않습니다.</div>
+      <div class="opts">
+        <label class="chip"><input type="radio" name="consent" value="네" required><span>네</span></label>
+        <label class="chip"><input type="radio" name="consent" value="아니오"><span>아니오</span></label>
+      </div>
+    </div>
+
+    <div class="footer-tag">Curate your own vibe · LEANON</div>
+  </form>
+</div>
+
+<div class="submitbar" id="submitbar">
+  <div class="inner"><button class="submit" type="submit" form="consultForm" id="submitBtn">제출하기</button></div>
+</div>
+
+<div class="done" id="doneView">
+  <h2>제출이 완료되었습니다</h2>
+  <p>소중한 답변 감사합니다.<br/>담당 디자이너가 확인 후 상담을 진행해 드릴게요.</p>
+</div>
+
+<script>
+  document.querySelectorAll('.opts[data-max]').forEach(group => {
+    const max = +group.dataset.max;
+    group.addEventListener('change', () => {
+      const boxes = [...group.querySelectorAll('input[type=checkbox]')];
+      const checked = boxes.filter(b => b.checked).length;
+      boxes.forEach(b => b.closest('.chip').classList.toggle('disabled', !b.checked && checked >= max));
+    });
+  });
+
+  // Supabase 연결 시 아래 두 값만 채우면 실제 저장됨
+  const SUPABASE_URL = "";
+  const SUPABASE_ANON_KEY = "";
+
+  const form = document.getElementById('consultForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = '제출 중...';
+    const fd = new FormData(form);
+    const payload = {
+      name: fd.get('name'), birth: fd.get('birth'),
+      region_si: fd.get('region_si'), region_gu: fd.get('region_gu'),
+      last_cut: fd.get('last_cut') ? Number(fd.get('last_cut')) : null,
+      last_perm: fd.get('last_perm') ? Number(fd.get('last_perm')) : null,
+      last_color: fd.get('last_color') ? Number(fd.get('last_color')) : null,
+      color_type: fd.get('color_type'), reference: fd.get('reference'),
+      today: fd.get('today'), length: fd.get('length'),
+      image: fd.getAll('image'), concern: fd.getAll('concern'), styling: fd.getAll('styling'),
+      past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
+    };
+    try {
+      if (SUPABASE_URL) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/consultations`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                     'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(await res.text());
+      } else {
+        console.log('제출 데이터(미리보기):', payload);
+      }
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('submitbar').style.display = 'none';
+      document.getElementById('doneView').style.display = 'block';
+      window.scrollTo(0, 0);
+    } catch (err) {
+      alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.\n' + err.message);
+      btn.disabled = false; btn.textContent = '제출하기';
+    }
+  });
+</script>
+</body>
+</html>

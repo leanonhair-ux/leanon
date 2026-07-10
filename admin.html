@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEANON — 상담 관리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ color-scheme:light; --ink:#1c1a17; --muted:#8a8377; --line:#e6e1d9; --bg:#f6f4f0; --card:#fff; --radius:14px; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+       background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased}
+
+  /* 로그인 */
+  #loginView{max-width:360px; margin:0 auto; padding:110px 24px}
+  #loginView h1{font-size:26px; letter-spacing:5px; text-align:center; margin-bottom:6px}
+  #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px}
+  #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
+       padding:14px; font-size:15px; margin-bottom:10px; font-family:inherit}
+  #loginView button{width:100%; border:none; border-radius:10px; background:var(--ink); color:#fff;
+       font-size:15px; font-weight:700; padding:15px; margin-top:6px; cursor:pointer}
+  #loginErr{color:#c0392b; font-size:13px; text-align:center; margin-top:12px; min-height:18px}
+
+  /* 앱 */
+  #appView{display:none}
+  .topbar{position:sticky; top:0; z-index:5; background:rgba(246,244,240,.9); backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line); padding:14px 18px; display:flex; align-items:center; gap:12px}
+  .topbar .logo{font-size:18px; letter-spacing:3px; font-weight:800}
+  .topbar .sub{color:var(--muted); font-size:13px}
+  .topbar .spacer{flex:1}
+  .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
+                 font-size:13px; cursor:pointer; font-family:inherit}
+  .filters{display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px 4px}
+  .fchip{border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 14px;
+         font-size:13.5px; cursor:pointer; user-select:none}
+  .fchip.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .count{color:var(--muted); font-size:13px; padding:6px 18px 0}
+
+  .grid{padding:14px 18px 60px; display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:12px}
+  .chead{display:flex; align-items:flex-start; gap:10px}
+  .cname{font-size:18px; font-weight:800}
+  .cmeta{color:var(--muted); font-size:12.5px; margin-top:3px}
+  .pill{margin-left:auto; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .p-wait{background:#f0ece4; color:#8a8377}
+  .p-assigned{background:#e7f0ff; color:#2f6bd0}
+  .p-done{background:#e6f6ea; color:#2f9e58}
+
+  .kv{font-size:13.5px; line-height:1.7}
+  .kv .k{color:var(--muted); display:inline-block; min-width:96px}
+  .tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px}
+  .tag{font-size:12px; background:#f0ece4; border-radius:6px; padding:3px 8px}
+  .memo{font-size:13px; background:#faf8f4; border:1px solid var(--line); border-radius:8px; padding:10px; white-space:pre-wrap}
+
+  .assign{display:flex; gap:8px; align-items:center; border-top:1px solid var(--line); padding-top:12px}
+  .assign label{font-size:12.5px; color:var(--muted)}
+  select, .note-in{border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13.5px; font-family:inherit; background:#fff}
+  .assign select{flex:1}
+
+  details.note{border-top:1px dashed var(--line); padding-top:10px}
+  details.note summary{font-size:13px; font-weight:600; cursor:pointer; color:var(--ink)}
+  .note-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px}
+  .note-grid .full{grid-column:1/3}
+  textarea.note-in{width:100%; min-height:60px; resize:vertical}
+  .savebtn{margin-top:8px; border:none; background:var(--ink); color:#fff; border-radius:8px; padding:11px; font-size:14px; font-weight:700; cursor:pointer; width:100%; font-family:inherit}
+  .empty{text-align:center; color:var(--muted); padding:80px 20px; font-size:15px}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginView">
+  <h1>LEANON</h1>
+  <p>상담 관리 · 직원 전용</p>
+  <input id="email" type="email" placeholder="이메일" autocomplete="username" />
+  <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
+  <button id="loginBtn">로그인</button>
+  <div id="loginErr"></div>
+</div>
+
+<!-- 대시보드 -->
+<div id="appView">
+  <div class="topbar">
+    <span class="logo">LEANON</span>
+    <span class="sub">상담 관리</span>
+    <span class="spacer"></span>
+    <button id="refreshBtn">새로고침</button>
+    <button id="logoutBtn">로그아웃</button>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+  /* ═══════ 설정 ═══════ */
+  const SUPABASE_URL = "";        // Supabase Project URL
+  const SUPABASE_ANON_KEY = "";   // Supabase anon key
+  const DESIGNERS = ["원장", "김실장", "이디자이너", "박디자이너"];  // 디자이너 명단 (수정)
+
+  const FACE = ["하트형","땅콩형","육각형","둥근형","마름모형","사각형","긴얼굴형","계란형"];
+  const NECK = ["짧은 편","긴 편","얇은 편","두꺼운 편","승모근이 높은 편","적당한 편"];
+  const HAIR = ["곱슬-웨이브형","곱슬-부푸는형","곱슬-가는형","반곱슬","직모","축모"];
+
+  const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+  let rows = [];
+  let filter = "전체";
+
+  const $ = id => document.getElementById(id);
+  const esc = s => (s==null?"":String(s)).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+  /* ── 인증 ── */
+  async function init(){
+    if(!sb){ $("loginErr").textContent="Supabase 설정이 필요합니다 (SUPABASE_URL 입력)"; return; }
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session) showApp(); else showLogin();
+  }
+  function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderFilters(); load(); }
+
+  $("loginBtn").onclick = async () => {
+    $("loginErr").textContent="";
+    const { error } = await sb.auth.signInWithPassword({ email:$("email").value.trim(), password:$("password").value });
+    if(error){ $("loginErr").textContent="로그인 실패: 이메일/비밀번호를 확인해 주세요."; return; }
+    showApp();
+  };
+  $("password").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+  $("logoutBtn").onclick = async () => { await sb.auth.signOut(); showLogin(); };
+  $("refreshBtn").onclick = () => load();
+
+  /* ── 필터 바 ── */
+  function renderFilters(){
+    const items = ["전체", ...DESIGNERS];
+    $("filters").innerHTML = items.map(n =>
+      `<div class="fchip ${n===filter?'active':''}" data-f="${esc(n)}">${n==="전체"?"전체 (매니저)":esc(n)}</div>`).join("");
+    $("filters").querySelectorAll(".fchip").forEach(c => c.onclick = () => { filter=c.dataset.f; renderFilters(); render(); });
+  }
+
+  /* ── 데이터 로드 ── */
+  async function load(){
+    const { data, error } = await sb.from("consultations").select("*").order("created_at",{ascending:false});
+    if(error){ $("grid").innerHTML=`<div class="empty">불러오기 오류: ${esc(error.message)}</div>`; return; }
+    rows = data || [];
+    render();
+  }
+
+  /* ── 렌더 ── */
+  function render(){
+    const list = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
+    $("count").textContent = `${list.length}건`;
+    if(!list.length){ $("grid").innerHTML=`<div class="empty">아직 상담 제출이 없어요.</div>`; return; }
+    $("grid").innerHTML = list.map(cardHTML).join("");
+    list.forEach(bind);
+  }
+
+  function arr(a){ return Array.isArray(a)&&a.length ? a.map(x=>`<span class="tag">${esc(x)}</span>`).join("") : '<span class="cmeta">-</span>'; }
+  function statusPill(s){
+    if(s==="상담완료") return '<span class="pill p-done">상담완료</span>';
+    if(s==="할당됨")   return '<span class="pill p-assigned">할당됨</span>';
+    return '<span class="pill p-wait">대기</span>';
+  }
+
+  function cardHTML(r){
+    const n = r.designer_note || {};
+    const opt = (list,sel)=>['<option value="">선택</option>',...list.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)].join("");
+    return `<div class="card" data-id="${r.id}">
+      <div class="chead">
+        <div>
+          <div class="cname">${esc(r.name)||"(이름없음)"}</div>
+          <div class="cmeta">${esc(r.birth)||""} · ${esc(r.region_si)||""} ${esc(r.region_gu)||""}</div>
+        </div>
+        ${statusPill(r.status)}
+      </div>
+
+      <div class="kv">
+        <div><span class="k">마지막 시술</span> 컷 ${r.last_cut??"-"}개월 · 펌 ${r.last_perm??"-"}개월 · 컬러 ${r.last_color??"-"}개월 ${r.color_type?`(${esc(r.color_type)})`:""}</div>
+        <div><span class="k">레퍼런스</span> ${esc(r.reference)||"-"}</div>
+        <div><span class="k">오늘 시술</span> ${esc(r.today)||"-"}</div>
+        <div><span class="k">기장감</span> ${esc(r.length)||"-"}</div>
+      </div>
+      <div><div class="cmeta">추구 이미지</div><div class="tags">${arr(r.image)}</div></div>
+      <div><div class="cmeta">고민/보완</div><div class="tags">${arr(r.concern)}</div></div>
+      <div><div class="cmeta">평소 스타일링</div><div class="tags">${arr(r.styling)}</div></div>
+      ${r.past?`<div><div class="cmeta">과거 불만족</div><div class="memo">${esc(r.past)}</div></div>`:""}
+
+      <div class="assign">
+        <label>담당 디자이너</label>
+        <select class="assignSel">${opt(DESIGNERS, r.assigned_designer)}</select>
+      </div>
+
+      <details class="note">
+        <summary>DESIGNER'S NOTE ${n.face||n.neck||n.hair||n.memo?"✓":""}</summary>
+        <div class="note-grid">
+          <select class="nFace">${opt(FACE, n.face)}</select>
+          <select class="nNeck">${opt(NECK, n.neck)}</select>
+          <select class="nHair full">${opt(HAIR, n.hair)}</select>
+          <textarea class="note-in full nMemo" placeholder="메모 (얼굴 비율/특이사항 등)">${esc(n.memo)}</textarea>
+        </div>
+        <button class="savebtn">저장 (상담완료 처리)</button>
+      </details>
+    </div>`;
+  }
+
+  function bind(r){
+    const card = $("grid").querySelector(`.card[data-id="${r.id}"]`);
+    if(!card) return;
+    // 할당
+    card.querySelector(".assignSel").onchange = async e => {
+      const name = e.target.value || null;
+      const status = name ? (r.status==="상담완료"?"상담완료":"할당됨") : "대기";
+      const { error } = await sb.from("consultations").update({ assigned_designer:name, status }).eq("id", r.id);
+      if(error) return alert("할당 오류: "+error.message);
+      r.assigned_designer=name; r.status=status; render();
+    };
+    // 노트 저장
+    card.querySelector(".savebtn").onclick = async () => {
+      const note = {
+        face: card.querySelector(".nFace").value,
+        neck: card.querySelector(".nNeck").value,
+        hair: card.querySelector(".nHair").value,
+        memo: card.querySelector(".nMemo").value
+      };
+      const { error } = await sb.from("consultations").update({ designer_note:note, status:"상담완료" }).eq("id", r.id);
+      if(error) return alert("저장 오류: "+error.message);
+      r.designer_note=note; r.status="상담완료"; render();
+    };
+  }
+
+  init();
+</script>
+</body>
+</html>
