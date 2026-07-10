@@ -128,7 +128,7 @@
     <span class="plabel">상태</span>
     <div class="fchip" data-s="전체">전체</div>
     <div class="fchip" data-s="대기">대기</div>
-    <div class="fchip" data-s="할당됨">할당됨</div>
+    <div class="fchip" data-s="할당됨">디자이너 지정됨</div>
     <div class="fchip" data-s="상담완료">상담완료</div>
   </div>
   <div class="filterbar" id="periodbar">
@@ -278,7 +278,7 @@
   function arr(a){ return Array.isArray(a)&&a.length ? a.map(x=>`<span class="tag">${esc(x)}</span>`).join("") : '<span class="cmeta">-</span>'; }
   function statusPill(s){
     if(s==="상담완료") return '<span class="pill p-done">상담완료</span>';
-    if(s==="할당됨")   return '<span class="pill p-assigned">할당됨</span>';
+    if(s==="할당됨")   return '<span class="pill p-assigned">디자이너 지정됨</span>';
     return '<span class="pill p-wait">대기</span>';
   }
 
