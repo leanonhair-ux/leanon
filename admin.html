@@ -17,7 +17,7 @@
   .loginlogo{width:160px; max-width:62%; height:auto; display:block; margin:0 auto 10px}
   #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px}
   #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
-       padding:14px; font-size:15px; margin-bottom:10px; font-family:inherit}
+       padding:14px; font-size:16px; margin-bottom:10px; font-family:inherit}
   #loginView button{width:100%; border:none; border-radius:10px; background:var(--ink); color:#fff;
        font-size:15px; font-weight:700; padding:15px; margin-top:6px; cursor:pointer}
   #loginErr{color:#c0392b; font-size:13px; text-align:center; margin-top:12px; min-height:18px}
@@ -31,19 +31,19 @@
   .topbar .sub{color:var(--muted); font-size:13px}
   .topbar .spacer{flex:1}
   .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
-                 font-size:13px; cursor:pointer; font-family:inherit}
+                 font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap}
   .filters{display:flex; flex-wrap:wrap; gap:8px; padding:14px 18px 4px}
   .fchip{border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 14px;
          font-size:13.5px; cursor:pointer; user-select:none}
   .fchip.active{background:var(--ink); color:#fff; border-color:var(--ink)}
   .filterbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 18px 2px}
   .filterbar .plabel{font-size:12px; color:var(--muted); margin-right:2px}
-  .filterbar .dates{display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12px}
+  .filterbar .dates{display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--muted); font-size:12px}
   .filterbar input[type=date]{border:1px solid var(--line); border-radius:8px; padding:6px 8px;
          font-size:12.5px; font-family:inherit; background:#fff; color:var(--ink)}
   .count{color:var(--muted); font-size:13px; padding:8px 18px 0}
 
-  .grid{padding:14px 18px 60px; display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .grid{padding:14px 18px 60px; display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr))}
   .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:12px}
   .chead{display:flex; align-items:flex-start; gap:10px}
   .cname{font-size:18px; font-weight:800}
@@ -72,6 +72,19 @@
   textarea.note-in{width:100%; min-height:60px; resize:vertical}
   .savebtn{margin-top:8px; border:none; background:var(--ink); color:#fff; border-radius:8px; padding:11px; font-size:14px; font-weight:700; cursor:pointer; width:100%; font-family:inherit}
   .empty{text-align:center; color:var(--muted); padding:80px 20px; font-size:15px}
+
+  /* 모바일 최적화 */
+  @media (max-width:600px){
+    .topbar{padding:12px 14px; gap:8px}
+    .topbar .sub{display:none}
+    .topbar button{padding:7px 10px; font-size:12.5px}
+    .filters{padding:12px 14px 4px}
+    .filterbar{padding:6px 14px 2px}
+    .count{padding:8px 14px 0}
+    .grid{grid-template-columns:1fr; padding:12px 14px 72px; gap:12px}
+    .card{padding:16px}
+    .kv .k{min-width:82px}
+  }
 </style>
 </head>
 <body>
