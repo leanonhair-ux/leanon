@@ -136,25 +136,25 @@
         </div>
       </div>
       <div class="field">
-        <label class="q" data-i18n="today_label">오늘 시술 진행</label>
+        <label class="q"><span data-i18n="today_label">오늘 시술 진행</span> <span class="hint" data-i18n="today_hint">*시술시간이 오래 소요될 수 있습니다</span></label>
         <div class="opts">
           <label class="chip"><input type="radio" name="today" value="예약한 시술만 원해요"><span data-i18n="today_reserved">예약한 시술만 원해요</span></label>
           <label class="chip"><input type="radio" name="today" value="추가 시술 필요하면 원해요"><span data-i18n="today_more">추가 시술 필요하면 원해요</span></label>
         </div>
       </div>
       <div class="field">
-        <label class="q" data-i18n="length_label">선호하는 기장감</label>
+        <label class="q"><span data-i18n="length_label">선호하는 기장감</span> <span class="hint" data-i18n="length_hint">여러 개 선택 가능</span></label>
         <div class="opts">
-          <label class="chip"><input type="radio" name="length" value="숏"><span data-i18n="len_short">숏</span></label>
-          <label class="chip"><input type="radio" name="length" value="단발"><span data-i18n="len_bob">단발</span></label>
-          <label class="chip"><input type="radio" name="length" value="중단발"><span data-i18n="len_mediumbob">중단발</span></label>
-          <label class="chip"><input type="radio" name="length" value="미디움"><span data-i18n="len_medium">미디움</span></label>
-          <label class="chip"><input type="radio" name="length" value="롱"><span data-i18n="len_long">롱</span></label>
-          <label class="chip"><input type="radio" name="length" value="상관없어요"><span data-i18n="len_any">상관없어요</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="숏"><span data-i18n="len_short">숏</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="단발"><span data-i18n="len_bob">단발</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="중단발"><span data-i18n="len_mediumbob">중단발</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="미디움"><span data-i18n="len_medium">미디움</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="롱"><span data-i18n="len_long">롱</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="상관없어요"><span data-i18n="len_any">상관없어요</span></label>
         </div>
       </div>
       <div class="field">
-        <label class="q" data-i18n="image_label">추구하는 이미지 <span class="hint" data-i18n="image_hint">최대 2개</span></label>
+        <label class="q"><span data-i18n="image_label">추구하는 이미지</span> <span class="hint" data-i18n="image_hint">최대 2개</span></label>
         <div class="opts" data-max="2">
           <label class="chip"><input type="checkbox" name="image" value="사랑스러운"><span data-i18n="img_lovely">사랑스러운</span></label>
           <label class="chip"><input type="checkbox" name="image" value="여성스러운"><span data-i18n="img_feminine">여성스러운</span></label>
@@ -167,7 +167,7 @@
         </div>
       </div>
       <div class="field">
-        <label class="q" data-i18n="concern_label">가장 고민 &amp; 보완하고 싶은 점</label>
+        <label class="q"><span data-i18n="concern_label">가장 고민 &amp; 보완하고 싶은 점</span></label>
         <div class="opts">
           <label class="chip"><input type="checkbox" name="concern" value="턱"><span data-i18n="con_jaw">턱</span></label>
           <label class="chip"><input type="checkbox" name="concern" value="광대"><span data-i18n="con_cheek">광대</span></label>
@@ -179,7 +179,7 @@
         </div>
       </div>
       <div class="field">
-        <label class="q" data-i18n="styling_label">평소 스타일링</label>
+        <label class="q"><span data-i18n="styling_label">평소 스타일링</span></label>
         <div class="opts">
           <label class="chip"><input type="checkbox" name="styling" value="롤드라이"><span data-i18n="st_roll">롤드라이</span></label>
           <label class="chip"><input type="checkbox" name="styling" value="고데기"><span data-i18n="st_iron">고데기</span></label>
@@ -191,7 +191,7 @@
         </div>
       </div>
       <div class="field">
-        <label class="q" for="past" data-i18n="past_label">과거 시술 시 불만족 했던 점 <span class="hint" data-i18n="past_hint">헤어 디자인 / 서비스 등</span></label>
+        <label class="q" for="past"><span data-i18n="past_label">과거 시술 시 불만족 했던 점</span> <span class="hint" data-i18n="past_hint">헤어 디자인 / 서비스 등</span></label>
         <textarea class="in" id="past" name="past" data-i18n-ph="past_ph" placeholder="자유롭게 작성해 주세요"></textarea>
       </div>
     </div>
@@ -228,8 +228,8 @@
       checklist_hint:"마지막 시술 시기", cut_label:"컷 (Cut)", perm_label:"펌 (Perm)", color_label:"컬러 (Color)", months_ago:"개월 전",
       color_bleach:"탈색", color_tonedown:"톤다운", color_black:"블랙",
       ref_label:"디자인 레퍼런스", ref_photo:"사진 있어요", ref_rec:"추천 받고 싶어요",
-      today_label:"오늘 시술 진행", today_reserved:"예약한 시술만 원해요", today_more:"추가 시술 필요하면 원해요",
-      length_label:"선호하는 기장감", len_short:"숏", len_bob:"단발", len_mediumbob:"중단발", len_medium:"미디움", len_long:"롱", len_any:"상관없어요",
+      today_label:"오늘 시술 진행", today_hint:"*시술시간이 오래 소요될 수 있습니다", today_reserved:"예약한 시술만 원해요", today_more:"추가 시술 필요하면 원해요",
+      length_label:"선호하는 기장감", length_hint:"여러 개 선택 가능", len_short:"숏", len_bob:"단발", len_mediumbob:"중단발", len_medium:"미디움", len_long:"롱", len_any:"상관없어요",
       image_label:"추구하는 이미지", image_hint:"최대 2개",
       img_lovely:"사랑스러운", img_feminine:"여성스러운", img_modern:"모던/고급", img_hip:"힙/트렌디", img_young:"영/캐주얼", img_unique:"개성/유니크", img_chic:"시크/전문적인", img_neutral:"중성적인",
       concern_label:"가장 고민 & 보완하고 싶은 점", con_jaw:"턱", con_cheek:"광대", con_facelen:"얼굴 길이", con_necklen:"목 길이", con_head:"두상", con_texture:"모질", con_idk:"모르겠어요",
@@ -245,8 +245,8 @@
       checklist_hint:"Last treatment", cut_label:"Cut", perm_label:"Perm", color_label:"Color", months_ago:"months ago",
       color_bleach:"Bleach", color_tonedown:"Tone Down", color_black:"Black",
       ref_label:"Design Reference", ref_photo:"I have a photo", ref_rec:"I want a recommendation",
-      today_label:"Today's Procedure", today_reserved:"Only the reserved procedure", today_more:"Open to more if needed",
-      length_label:"Preferred Length", len_short:"Short", len_bob:"Bob", len_mediumbob:"Medium Bob", len_medium:"Medium", len_long:"Long", len_any:"Doesn't matter",
+      today_label:"Today's Procedure", today_hint:"*The procedure may take a while", today_reserved:"Only the reserved procedure", today_more:"Open to more if needed",
+      length_label:"Preferred Length", length_hint:"Multiple choices allowed", len_short:"Short", len_bob:"Bob", len_mediumbob:"Medium Bob", len_medium:"Medium", len_long:"Long", len_any:"Doesn't matter",
       image_label:"Desired Image", image_hint:"Max 2",
       img_lovely:"Lovely", img_feminine:"Feminine", img_modern:"Modern/Luxurious", img_hip:"Hip/Trendy", img_young:"Young/Casual", img_unique:"Individual/Unique", img_chic:"Chic/Professional", img_neutral:"Neutral",
       concern_label:"Biggest Concerns & Areas to Improve", con_jaw:"Jaw", con_cheek:"Cheekbones", con_facelen:"Face length", con_necklen:"Neck length", con_head:"Head shape", con_texture:"Hair texture", con_idk:"I don't know",
@@ -262,8 +262,8 @@
       checklist_hint:"上次造型时间", cut_label:"剪发 (Cut)", perm_label:"烫发 (Perm)", color_label:"染发 (Color)", months_ago:"个月前",
       color_bleach:"漂发", color_tonedown:"调暗", color_black:"黑色",
       ref_label:"设计参考", ref_photo:"我有照片", ref_rec:"想听推荐",
-      today_label:"今日施术", today_reserved:"只做预约的项目", today_more:"需要的话可加项目",
-      length_label:"偏好长度", len_short:"短发", len_bob:"波波头", len_mediumbob:"中长波波", len_medium:"中长发", len_long:"长发", len_any:"都可以",
+      today_label:"今日施术", today_hint:"*施术时间可能较长", today_reserved:"只做预约的项目", today_more:"需要的话可加项目",
+      length_label:"偏好长度", length_hint:"可多选", len_short:"短发", len_bob:"波波头", len_mediumbob:"中长波波", len_medium:"中长发", len_long:"长发", len_any:"都可以",
       image_label:"期望形象", image_hint:"最多2个",
       img_lovely:"可爱", img_feminine:"女人味", img_modern:"摩登/高级", img_hip:"潮流", img_young:"年轻/休闲", img_unique:"个性/独特", img_chic:"干练/专业", img_neutral:"中性",
       concern_label:"最想改善的地方", con_jaw:"下巴", con_cheek:"颧骨", con_facelen:"脸长", con_necklen:"脖子长度", con_head:"头型", con_texture:"发质", con_idk:"不清楚",
@@ -279,8 +279,8 @@
       checklist_hint:"前回の施術時期", cut_label:"カット (Cut)", perm_label:"パーマ (Perm)", color_label:"カラー (Color)", months_ago:"ヶ月前",
       color_bleach:"ブリーチ", color_tonedown:"トーンダウン", color_black:"ブラック",
       ref_label:"デザイン参考", ref_photo:"写真があります", ref_rec:"おすすめ希望",
-      today_label:"本日の施術", today_reserved:"予約した施術のみ", today_more:"必要なら追加も希望",
-      length_label:"好みの長さ", len_short:"ショート", len_bob:"ボブ", len_mediumbob:"ミディアムボブ", len_medium:"ミディアム", len_long:"ロング", len_any:"どちらでも",
+      today_label:"本日の施術", today_hint:"*施術時間が長くなる場合があります", today_reserved:"予約した施術のみ", today_more:"必要なら追加も希望",
+      length_label:"好みの長さ", length_hint:"複数選択可", len_short:"ショート", len_bob:"ボブ", len_mediumbob:"ミディアムボブ", len_medium:"ミディアム", len_long:"ロング", len_any:"どちらでも",
       image_label:"目指すイメージ", image_hint:"最大2つ",
       img_lovely:"ラブリー", img_feminine:"フェミニン", img_modern:"モダン/高級", img_hip:"ヒップ/トレンディ", img_young:"ヤング/カジュアル", img_unique:"個性/ユニーク", img_chic:"シック/プロ", img_neutral:"中性的",
       concern_label:"一番の悩み・補いたい点", con_jaw:"顎", con_cheek:"頬骨", con_facelen:"顔の長さ", con_necklen:"首の長さ", con_head:"頭の形", con_texture:"髪質", con_idk:"わからない",
@@ -330,7 +330,7 @@
       last_perm: fd.get('last_perm') ? Number(fd.get('last_perm')) : null,
       last_color: fd.get('last_color') ? Number(fd.get('last_color')) : null,
       color_type: fd.get('color_type'), reference: fd.get('reference'),
-      today: fd.get('today'), length: fd.get('length'),
+      today: fd.get('today'), length: fd.getAll('length').join(', ') || null,
       image: fd.getAll('image'), concern: fd.getAll('concern'), styling: fd.getAll('styling'),
       past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
     };
