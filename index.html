@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>LEANON — 상담지</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     color-scheme:light;
@@ -210,8 +211,9 @@
   });
 
   // Supabase 연결 시 아래 두 값만 채우면 실제 저장됨
-  const SUPABASE_URL = "";
-  const SUPABASE_ANON_KEY = "";
+  const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
+  const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const form = document.getElementById('consultForm');
   form.addEventListener('submit', async (e) => {
@@ -231,14 +233,9 @@
       past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
     };
     try {
-      if (SUPABASE_URL) {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/consultations`, {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                     'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error(await res.text());
+      if (sb) {
+        const { error } = await sb.from('consultations').insert(payload);
+        if (error) throw new Error(error.message);
       } else {
         console.log('제출 데이터(미리보기):', payload);
       }
