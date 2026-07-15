@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEANON — 채용 관리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ color-scheme:light; --ink:#1c1a17; --muted:#8a8377; --line:#e6e1d9; --bg:#ffffff; --card:#f6f1ea; --radius:14px; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+       background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased}
+
+  /* 로그인 */
+  #loginView{max-width:360px; margin:0 auto; padding:110px 24px}
+  #loginView h1{font-size:26px; letter-spacing:5px; text-align:center; margin-bottom:6px}
+  .loginlogo{width:160px; max-width:62%; height:auto; display:block; margin:0 auto 10px}
+  #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px}
+  #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
+       padding:14px; font-size:16px; margin-bottom:10px; font-family:inherit}
+  #loginView button{width:100%; border:none; border-radius:10px; background:var(--ink); color:#fff;
+       font-size:15px; font-weight:700; padding:15px; margin-top:6px; cursor:pointer}
+  #loginErr{color:#c0392b; font-size:13px; text-align:center; margin-top:12px; min-height:18px}
+
+  /* 앱 */
+  #appView{display:none}
+  .topbar{position:sticky; top:0; z-index:5; background:rgba(255,255,255,.9); backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line); padding:14px 18px; display:flex; align-items:center; gap:12px}
+  .topbar .logo{font-size:18px; letter-spacing:3px; font-weight:800}
+  .topbar .toplogo{height:22px; width:auto; display:block}
+  .topbar .sub{color:var(--muted); font-size:13px}
+  .topbar .spacer{flex:1}
+  .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
+                 font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap}
+  .filterbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 18px 2px}
+  .filterbar .plabel{font-size:12px; color:var(--muted); margin-right:2px}
+  .filterbar .dates{display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--muted); font-size:12px}
+  .filterbar input[type=date]{border:1px solid var(--line); border-radius:8px; padding:6px 8px;
+         font-size:12.5px; font-family:inherit; background:#fff; color:var(--ink)}
+  .fchip{border:1px solid var(--line); background:#fff; border-radius:999px; padding:8px 14px;
+         font-size:13.5px; cursor:pointer; user-select:none}
+  .fchip.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .count{color:var(--muted); font-size:13px; padding:10px 18px 0}
+
+  .grid{padding:14px 18px 60px; display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr))}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; gap:12px}
+  .chead{display:flex; align-items:flex-start; gap:10px}
+  .cname{font-size:18px; font-weight:800}
+  .cmeta{color:var(--muted); font-size:12.5px; margin-top:3px}
+  .cdate{color:var(--muted); font-size:12px; margin-top:4px; font-variant-numeric:tabular-nums}
+  .pill{margin-left:auto; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .p-wait{background:#ece5d8; color:#8a8377}
+  .p-review{background:#e7f0ff; color:#2f6bd0}
+  .p-pass{background:#e6f6ea; color:#2f9e58}
+  .p-fail{background:#fbeae8; color:#c0392b}
+
+  .kv{font-size:13.5px; line-height:1.75}
+  .kv .k{color:var(--muted); display:inline-block; min-width:78px; vertical-align:top}
+  .kv a{color:var(--ink); border-bottom:1px solid var(--line)}
+  .qa{border-top:1px dashed var(--line); padding-top:10px}
+  .qa .qq{font-size:12.5px; color:var(--muted); margin-bottom:3px}
+  .qa .aa{font-size:13.5px; line-height:1.6; white-space:pre-wrap; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px}
+  details.essays summary{font-size:13px; font-weight:700; cursor:pointer; padding:8px 0}
+  .essays[open] summary{margin-bottom:4px}
+
+  .statusrow{display:flex; gap:8px; align-items:center; border-top:1px solid var(--line); padding-top:12px; flex-wrap:wrap}
+  .statusrow label{font-size:12.5px; color:var(--muted)}
+  select{border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13.5px; font-family:inherit; background:#fff; flex:1}
+  details.memo{border-top:1px dashed var(--line); padding-top:10px}
+  details.memo summary{font-size:13px; font-weight:600; cursor:pointer}
+  textarea.memo-in{width:100%; min-height:60px; resize:vertical; border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13.5px; font-family:inherit; background:#fff; margin-top:10px}
+  .savebtn{margin-top:10px; border:none; background:var(--ink); color:#fff; border-radius:8px; padding:11px; font-size:14px; font-weight:700; cursor:pointer; width:100%; font-family:inherit}
+  .cardfoot{display:flex; justify-content:flex-end; margin-top:2px}
+  .delbtn{border:none; background:transparent; color:#c0392b; font-size:12.5px; font-family:inherit; cursor:pointer; padding:6px 8px; border-radius:6px}
+  .delbtn:hover{background:#fbeae8}
+  .empty{text-align:center; color:var(--muted); padding:80px 20px; font-size:15px}
+
+  /* 삭제 확인 모달 */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.42); display:none; align-items:center; justify-content:center; z-index:100; padding:20px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff; border-radius:16px; padding:24px 22px 18px; max-width:340px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  .modal-title{font-size:17px; font-weight:800; margin-bottom:8px}
+  .modal-body{font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:20px}
+  .modal-actions{display:flex; gap:10px}
+  .mbtn{flex:1; border:none; border-radius:10px; padding:13px; font-size:14.5px; font-weight:700; cursor:pointer; font-family:inherit}
+  .mbtn.cancel{background:#f0ece4; color:var(--ink)}
+  .mbtn.danger{background:#c0392b; color:#fff}
+  .mbtn:disabled{opacity:.5}
+
+  @media (max-width:600px){
+    .topbar{padding:12px 14px; gap:8px}
+    .topbar .sub{display:none}
+    .filterbar{padding:10px 14px 2px}
+    .count{padding:10px 14px 0}
+    .grid{grid-template-columns:1fr; padding:12px 14px 72px; gap:12px}
+    .card{padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginView">
+  <img class="loginlogo" src="../assets/brand/wordmark-dark.png" alt="LEANON"
+    onerror="this.onerror=null; this.src='../logo.png'; this.onerror=function(){this.outerHTML='&lt;h1&gt;LEANON&lt;/h1&gt;'}" />
+  <p>채용 관리 · 직원 전용</p>
+  <input id="email" type="email" placeholder="이메일" autocomplete="username" />
+  <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
+  <button id="loginBtn">로그인</button>
+  <div id="loginErr"></div>
+</div>
+
+<!-- 대시보드 -->
+<div id="appView">
+  <div class="topbar">
+    <img class="toplogo" src="../assets/brand/wordmark-dark.png" alt="LEANON"
+      onerror="this.onerror=null; this.src='../logo.png'; this.onerror=function(){this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'}" />
+    <span class="sub">채용 관리</span>
+    <span class="spacer"></span>
+    <button id="refreshBtn">새로고침</button>
+    <button id="logoutBtn">로그아웃</button>
+  </div>
+  <div class="filterbar" id="statusbar">
+    <span class="plabel">상태</span>
+    <div class="fchip" data-s="전체">전체</div>
+    <div class="fchip" data-s="대기">대기</div>
+    <div class="fchip" data-s="검토중">검토중</div>
+    <div class="fchip" data-s="합격">합격</div>
+    <div class="fchip" data-s="불합격">불합격</div>
+  </div>
+  <div class="filterbar" id="periodbar">
+    <span class="plabel">기간</span>
+    <div class="fchip" data-p="all">전체기간</div>
+    <div class="fchip" data-p="today">오늘</div>
+    <div class="fchip" data-p="7d">최근 7일</div>
+    <div class="fchip" data-p="month">이번 달</div>
+    <span class="dates"><input type="date" id="fromDate"> ~ <input type="date" id="toDate"></span>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal">
+    <div class="modal-title">지원서 삭제</div>
+    <div class="modal-body" id="delMsg">이 지원서를 삭제할까요?</div>
+    <div class="modal-actions">
+      <button class="mbtn cancel" id="delCancel">취소</button>
+      <button class="mbtn danger" id="delConfirm">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
+  const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  const STATUSES = ["대기","검토중","합격","불합격"];
+  let rows = [];
+  let statusFilter = "전체";
+  let activePeriod = "all";
+  let fromDate = null, toDate = null;
+  let pendingDelete = null;
+
+  const $ = id => document.getElementById(id);
+  const esc = s => (s==null?"":String(s)).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  function fmtDT(iso){ if(!iso) return ""; const d=new Date(iso); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+
+  /* ── 인증 ── */
+  async function init(){
+    if(!sb){ $("loginErr").textContent="Supabase 설정이 필요합니다"; return; }
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session) showApp(); else showLogin();
+  }
+  function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderStatusChips(); renderPeriodChips(); load(); }
+
+  $("loginBtn").onclick = async () => {
+    $("loginErr").textContent="";
+    const { error } = await sb.auth.signInWithPassword({ email:$("email").value.trim(), password:$("password").value });
+    if(error){ $("loginErr").textContent="로그인 실패: 이메일/비밀번호를 확인해 주세요."; return; }
+    showApp();
+  };
+  $("password").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+  $("logoutBtn").onclick = async () => { await sb.auth.signOut(); showLogin(); };
+  $("refreshBtn").onclick = () => load();
+
+  /* ── 상태 필터 ── */
+  function renderStatusChips(){
+    document.querySelectorAll("#statusbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.s===statusFilter));
+  }
+  document.querySelectorAll("#statusbar .fchip").forEach(c => c.onclick = () => { statusFilter=c.dataset.s; renderStatusChips(); render(); });
+
+  /* ── 기간 필터 ── */
+  function renderPeriodChips(){
+    document.querySelectorAll("#periodbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.p===activePeriod));
+  }
+  function setPeriod(p){
+    const now = new Date();
+    if(p==="all"){ fromDate=null; toDate=null; }
+    else if(p==="today"){ fromDate=ymd(now); toDate=ymd(now); }
+    else if(p==="7d"){ const s=new Date(now); s.setDate(s.getDate()-6); fromDate=ymd(s); toDate=ymd(now); }
+    else if(p==="month"){ fromDate=ymd(new Date(now.getFullYear(), now.getMonth(), 1)); toDate=ymd(now); }
+    activePeriod = p;
+    $("fromDate").value = fromDate||""; $("toDate").value = toDate||"";
+    render();
+  }
+  document.querySelectorAll("#periodbar .fchip").forEach(c => c.onclick = () => { setPeriod(c.dataset.p); renderPeriodChips(); });
+  $("fromDate").onchange = () => { fromDate=$("fromDate").value||null; activePeriod="custom"; renderPeriodChips(); render(); };
+  $("toDate").onchange   = () => { toDate=$("toDate").value||null; activePeriod="custom"; renderPeriodChips(); render(); };
+  function inPeriod(r){
+    if(!fromDate && !toDate) return true;
+    const t = new Date(r.created_at);
+    if(fromDate && t < new Date(fromDate+"T00:00:00")) return false;
+    if(toDate && t > new Date(toDate+"T23:59:59.999")) return false;
+    return true;
+  }
+
+  /* ── 삭제 모달 ── */
+  function openDelModal(r){
+    pendingDelete = r;
+    $("delMsg").textContent = `'${r.name||"이 지원자"}' 님의 지원서를 삭제할까요? 삭제하면 복구할 수 없습니다.`;
+    $("delConfirm").disabled = false; $("delConfirm").textContent = "삭제";
+    $("delModal").classList.add("open");
+  }
+  function closeDelModal(){ $("delModal").classList.remove("open"); pendingDelete = null; }
+  $("delCancel").onclick = closeDelModal;
+  $("delModal").onclick = e => { if(e.target===$("delModal")) closeDelModal(); };
+  $("delConfirm").onclick = async () => {
+    const r = pendingDelete; if(!r) return;
+    $("delConfirm").disabled = true; $("delConfirm").textContent = "삭제 중...";
+    const { error } = await sb.from("applications").delete().eq("id", r.id);
+    if(error){ alert("삭제 오류: "+error.message); $("delConfirm").disabled=false; $("delConfirm").textContent="삭제"; return; }
+    rows = rows.filter(x => x.id !== r.id);
+    closeDelModal(); render();
+  };
+
+  /* ── 데이터 로드 ── */
+  async function load(){
+    const { data, error } = await sb.from("applications").select("*").order("created_at",{ascending:false});
+    if(error){ $("grid").innerHTML=`<div class="empty">불러오기 오류: ${esc(error.message)}</div>`; return; }
+    rows = data || [];
+    render();
+  }
+
+  /* ── 렌더 ── */
+  function render(){
+    let list = rows.slice();
+    if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
+    list = list.filter(inPeriod);
+    $("count").textContent = `${list.length}명`;
+    if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 지원자가 없어요.</div>`; return; }
+    $("grid").innerHTML = list.map(cardHTML).join("");
+    list.forEach(bind);
+  }
+
+  function statusPill(s){
+    if(s==="합격")   return '<span class="pill p-pass">합격</span>';
+    if(s==="불합격") return '<span class="pill p-fail">불합격</span>';
+    if(s==="검토중") return '<span class="pill p-review">검토중</span>';
+    return '<span class="pill p-wait">대기</span>';
+  }
+  const igUrl = h => { const id=(h||"").replace(/^@/,"").trim(); return id ? `https://instagram.com/${encodeURIComponent(id)}` : null; };
+  const qa = (q,a) => a ? `<div class="qa"><div class="qq">${q}</div><div class="aa">${esc(a)}</div></div>` : "";
+
+  function cardHTML(r){
+    const ig = igUrl(r.instagram);
+    const opt = STATUSES.map(v=>`<option ${v===(r.status||"대기")?'selected':''}>${esc(v)}</option>`).join("");
+    return `<div class="card" data-id="${r.id}">
+      <div class="chead">
+        <div>
+          <div class="cname">${esc(r.name)||"(이름없음)"}</div>
+          <div class="cmeta">${esc(r.birth_mbti)||""}</div>
+          <div class="cdate">🕓 ${fmtDT(r.created_at)} 지원</div>
+        </div>
+        ${statusPill(r.status)}
+      </div>
+
+      <div class="kv">
+        <div><span class="k">연락처</span> <a href="tel:${esc((r.phone||'').replace(/[^0-9+]/g,''))}">${esc(r.phone)||"-"}</a></div>
+        <div><span class="k">인스타</span> ${ig?`<a href="${ig}" target="_blank" rel="noopener">${esc(r.instagram)}</a>`:(esc(r.instagram)||"-")}</div>
+        <div><span class="k">거주지</span> ${esc(r.address)||"-"}</div>
+        <div><span class="k">학력</span> ${esc(r.education)||"-"}</div>
+        <div><span class="k">경력</span> ${esc(r.experience)||"-"}</div>
+        <div><span class="k">자격증</span> ${esc(r.certifications)||"-"}</div>
+      </div>
+
+      <details class="essays">
+        <summary>자기소개 보기</summary>
+        ${qa("미용을 선택한 계기", r.why_beauty)}
+        ${qa("성격과 장단점", r.personality)}
+        ${qa("린온만의 차별점", r.leanon_diff)}
+        ${qa("입사 시 중요하게 보는 것", r.important_factor)}
+        ${qa("커리어 목표·포부", r.career_goal)}
+        ${qa("채용되어야 하는 이유", r.appeal)}
+      </details>
+
+      <div class="statusrow">
+        <label>전형 상태</label>
+        <select class="statusSel">${opt}</select>
+      </div>
+
+      <details class="memo">
+        <summary>담당자 메모 ${r.memo?"✓":""}</summary>
+        <textarea class="memo-in" placeholder="면접 일정 / 평가 메모 등">${esc(r.memo)}</textarea>
+        <button class="savebtn">메모 저장</button>
+      </details>
+
+      <div class="cardfoot"><button class="delbtn">🗑 삭제</button></div>
+    </div>`;
+  }
+
+  function bind(r){
+    const card = $("grid").querySelector(`.card[data-id="${r.id}"]`);
+    if(!card) return;
+    card.querySelector(".statusSel").onchange = async e => {
+      const status = e.target.value;
+      const { error } = await sb.from("applications").update({ status }).eq("id", r.id);
+      if(error) return alert("상태 변경 오류: "+error.message);
+      r.status=status; render();
+    };
+    card.querySelector(".savebtn").onclick = async () => {
+      const btn = card.querySelector(".savebtn");
+      btn.disabled = true; btn.textContent = "저장 중...";
+      const memo = card.querySelector(".memo-in").value;
+      const { error } = await sb.from("applications").update({ memo }).eq("id", r.id);
+      btn.disabled = false; btn.textContent = "메모 저장";
+      if(error) return alert("저장 오류: "+error.message);
+      r.memo=memo;
+    };
+    card.querySelector(".delbtn").onclick = () => openDelModal(r);
+  }
+
+  init();
+</script>
+</body>
+</html>
