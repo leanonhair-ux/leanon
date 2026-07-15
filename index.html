@@ -4,156 +4,128 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>LEANON — Curate your own vibe</title>
-<meta name="description" content="LEANON — 당신에게 꼭 맞는 스타일을 설계하는 상담 기반 스타일링 스튜디오." />
+<meta name="description" content="LEANON — 당신에게 꼭 맞는 스타일을 설계하는 상담 기반 스타일링 스튜디오. 서울 성동구." />
 <meta property="og:title" content="LEANON — Curate your own vibe" />
 <meta property="og:description" content="상담 기반 스타일링 스튜디오. Curate your own vibe." />
+<meta property="og:image" content="assets/posters/poster-14.jpg" />
 <meta property="og:type" content="website" />
 <style>
-  :root{
-    --bg:#f2f0eb; --panel:#faf9f6; --ink:#1a1a1a; --muted:#8c877d;
-    --line:#e0dbd1; --line-strong:#cfc9bd; --maxw:1080px;
-  }
+  :root{ --ink:#1a1a1a; --paper:#f2f0eb; --muted:#8c877d; --line:#e2ddd3; --line-strong:#cfc9bd; --maxw:1080px; }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
+  body{margin:0; background:#c7c4be; color:var(--ink);
     font-family:"Apple SD Gothic Neo","Pretendard","Helvetica Neue",Arial,"Malgun Gothic",sans-serif;
-    -webkit-font-smoothing:antialiased; line-height:1.7; font-weight:350;
-  }
+    -webkit-font-smoothing:antialiased; line-height:1.7; font-weight:350;}
   a{color:inherit; text-decoration:none}
-  img{max-width:100%; display:block}
+  img{display:block; max-width:100%}
   .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
   .eyebrow{font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); font-weight:500}
 
   /* NAV */
-  header{position:sticky; top:0; z-index:50; background:rgba(242,240,235,.82);
-    backdrop-filter:saturate(140%) blur(10px); border-bottom:1px solid var(--line)}
-  .nav{display:flex; align-items:center; justify-content:space-between; height:64px}
-  .nav .logo img{height:22px; width:auto}
-  .nav .logo span{font-weight:700; letter-spacing:.34em; font-size:18px}
-  .nav ul{display:flex; gap:30px; list-style:none; margin:0; padding:0}
-  .nav ul a{font-size:12.5px; letter-spacing:.22em; text-transform:uppercase; color:#4a463f}
+  header{position:fixed; inset:0 0 auto 0; z-index:60;
+    background:linear-gradient(to bottom, rgba(244,242,238,.72), rgba(244,242,238,0));
+    backdrop-filter:saturate(140%) blur(6px); -webkit-backdrop-filter:saturate(140%) blur(6px);
+    transition:background .3s;}
+  header.solid{background:rgba(244,242,238,.9); border-bottom:1px solid var(--line)}
+  .nav{display:flex; align-items:center; justify-content:space-between; height:60px}
+  .nav .logo img{height:18px; width:auto}
+  .nav ul{display:flex; gap:26px; list-style:none; margin:0; padding:0}
+  .nav ul a{font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:#33302b}
   .nav ul a:hover{color:#000}
-  .nav .cta{font-size:12px; letter-spacing:.18em; text-transform:uppercase;
-    border:1px solid var(--ink); padding:9px 16px; border-radius:999px}
+  .nav .cta{font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; border:1px solid var(--ink); padding:8px 15px; border-radius:999px}
   .nav .cta:hover{background:var(--ink); color:#fff}
-  .menu-toggle{display:none; background:none; border:0; font-size:22px; cursor:pointer; color:var(--ink)}
-  @media(max-width:760px){
-    .nav ul{display:none}
-    .menu-toggle{display:block}
-    .nav .cta{display:none}
-  }
+  @media(max-width:720px){ .nav ul{display:none} }
 
-  /* HERO */
-  .hero{min-height:82vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:80px 24px 64px}
-  .hero .mark{height:52px; margin-bottom:26px; opacity:.92}
-  .hero h1{font-size:clamp(30px,6vw,58px); font-weight:300; letter-spacing:.04em; margin:0 0 18px; font-style:italic}
-  .hero p{max-width:520px; color:#5a564e; margin:0 auto 34px; font-size:16px}
-  .btns{display:flex; gap:12px; flex-wrap:wrap; justify-content:center}
-  .btn{display:inline-block; font-size:13px; letter-spacing:.12em; padding:14px 26px; border-radius:999px;
-    border:1px solid var(--ink); transition:.2s}
+  /* POSTER SECTIONS */
+  .poster{position:relative; min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
+  .poster img{width:100%; height:100%; object-fit:contain; position:absolute; inset:0; margin:auto}
+  /* hero overlay */
+  .hero-cta{position:absolute; left:0; right:0; bottom:15%; z-index:5; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; padding:0 24px}
+  .btn{display:inline-block; font-size:13px; letter-spacing:.1em; padding:13px 26px; border-radius:999px; border:1px solid var(--ink); background:rgba(242,240,235,.6); backdrop-filter:blur(2px); transition:.2s}
+  .btn:hover{background:var(--ink); color:#fff}
   .btn-solid{background:var(--ink); color:#fff}
   .btn-solid:hover{background:#000}
-  .btn-ghost:hover{background:var(--ink); color:#fff}
+  .scrollcue{position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:5; font-size:11px; letter-spacing:.25em; text-transform:uppercase; color:#4a463f; opacity:.7; animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
 
-  /* SECTION */
-  section{padding:88px 0; border-top:1px solid var(--line)}
+  /* CONTENT SECTIONS (paper) */
+  .paper{background:var(--paper)}
+  section.block{padding:92px 0}
   .sec-head{text-align:center; margin-bottom:48px}
   .sec-head h2{font-size:clamp(22px,3.4vw,30px); font-weight:300; letter-spacing:.16em; margin:10px 0 0; text-transform:uppercase}
 
-  /* ABOUT */
-  .about{max-width:720px; margin:0 auto; text-align:center}
-  .about .ko{font-size:19px; color:#2b2822; line-height:1.9; font-weight:350}
-  .about .en{margin-top:22px; color:var(--muted); font-size:14px; line-height:1.8; font-style:italic; letter-spacing:.01em}
-
   /* MENU */
   .menu-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px 64px}
-  @media(max-width:760px){.menu-grid{grid-template-columns:1fr; gap:36px}}
-  .mcat{break-inside:avoid}
-  .mcat h3{font-size:13px; letter-spacing:.26em; text-transform:uppercase; margin:0 0 4px; font-weight:600}
-  .mcat .sub{color:var(--muted); font-size:11px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:14px}
+  @media(max-width:760px){.menu-grid{grid-template-columns:1fr; gap:34px}}
+  .mcat h3{font-size:13px; letter-spacing:.26em; text-transform:uppercase; margin:0 0 2px; font-weight:600}
+  .mcat .sub{color:var(--muted); font-size:11px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:14px}
   .row{display:flex; align-items:baseline; gap:10px; padding:5px 0; font-size:14.5px}
   .row .name{flex:0 0 auto; color:#2b2822}
-  .row .tier{color:var(--muted); font-size:12.5px; margin-left:2px}
+  .row .tier{color:var(--muted); font-size:12px; margin-left:2px}
   .row .dots{flex:1 1 auto; border-bottom:1px dotted var(--line-strong); transform:translateY(-4px)}
-  .row .price{flex:0 0 auto; color:#1a1a1a; font-variant-numeric:tabular-nums; letter-spacing:.02em}
+  .row .price{flex:0 0 auto; font-variant-numeric:tabular-nums; letter-spacing:.02em}
   .grp{margin:12px 0 4px; font-size:12.5px; color:#6a655c; letter-spacing:.05em}
-  .note{color:var(--muted); font-size:12px; text-align:center; margin-top:40px}
-
-  /* LENGTH GUIDE */
-  .length{max-width:760px; margin:0 auto}
-  .length .lrow{display:flex; align-items:baseline; gap:14px; padding:12px 0; border-bottom:1px solid var(--line)}
-  .length .lrow:last-child{border-bottom:0}
-  .length .lname{flex:0 0 130px; font-size:15px; letter-spacing:.1em}
-  .length .lname em{font-style:normal; color:var(--muted); font-size:12px; letter-spacing:.16em; text-transform:uppercase; display:block}
-  .length .ldesc{color:#4a463f; font-size:14px}
+  .note{color:var(--muted); font-size:12px; text-align:center; margin-top:38px}
 
   /* LOCATION */
-  .loc-grid{display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start}
-  @media(max-width:760px){.loc-grid{grid-template-columns:1fr; gap:28px}}
+  .loc-grid{display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center}
+  @media(max-width:760px){.loc-grid{grid-template-columns:1fr; gap:30px}}
   .loc dl{margin:0}
-  .loc dt{font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:20px}
+  .loc dt{font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-top:22px}
   .loc dt:first-child{margin-top:0}
-  .loc dd{margin:4px 0 0; font-size:15.5px; color:#2b2822}
-  .fill{background:#efe7d8; color:#8a6d2f; padding:1px 8px; border-radius:4px; font-size:13px}
-  .mapbox{background:var(--panel); border:1px solid var(--line); border-radius:10px; aspect-ratio:4/3;
-    display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; text-align:center; padding:20px}
+  .loc dd{margin:5px 0 0; font-size:16px; color:#2b2822}
+  .loc dd a{border-bottom:1px solid var(--line-strong); padding-bottom:1px}
+  .loc dd a:hover{border-color:var(--ink)}
+  .fill{background:#efe7d8; color:#8a6d2f; padding:1px 8px; border-radius:4px; font-size:13.5px}
+  .loc .posterimg{border-radius:8px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.12)}
+  .loc .posterimg img{width:100%; height:auto}
 
   /* FOOTER */
-  footer{border-top:1px solid var(--line); padding:56px 0 72px; text-align:center}
-  footer .fmark{height:26px; margin:0 auto 18px; opacity:.85}
-  footer .slogan{font-style:italic; color:#5a564e; margin-bottom:24px}
-  footer .social{display:flex; gap:22px; justify-content:center; margin-bottom:26px}
+  footer{background:var(--paper); border-top:1px solid var(--line); padding:56px 0 70px; text-align:center}
+  footer .fmark{height:30px; margin:0 auto 16px; opacity:.85}
+  footer .slogan{font-style:italic; color:#5a564e; margin-bottom:22px; letter-spacing:.02em}
+  footer .social{display:flex; gap:22px; justify-content:center; margin-bottom:24px; flex-wrap:wrap}
   footer .social a{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#4a463f; border-bottom:1px solid transparent; padding-bottom:2px}
   footer .social a:hover{border-color:var(--ink); color:#000}
-  footer .copy{font-size:11.5px; color:var(--muted); letter-spacing:.08em}
-  footer .copy a{text-decoration:underline; text-underline-offset:2px}
+  footer .copy{font-size:11.5px; color:var(--muted); letter-spacing:.06em}
 </style>
 </head>
 <body>
 
-<header>
+<header id="hdr">
   <div class="wrap nav">
-    <a class="logo" href="#top"><img src="logo.png" alt="LEANON" onerror="this.outerHTML='<span>LEANON</span>'" /></a>
+    <a class="logo" href="#top"><img src="assets/brand/wordmark-dark.png" alt="LEANON" onerror="this.outerHTML='<span style=&quot;font-weight:700;letter-spacing:.28em;font-size:16px&quot;>LEANON</span>'" /></a>
     <ul>
-      <li><a href="#about">About</a></li>
-      <li><a href="#menu">Menu</a></li>
-      <li><a href="#length">Length</a></li>
+      <li><a href="#menu">Price</a></li>
       <li><a href="#location">Location</a></li>
+      <li><a href="https://instagram.com/lean.on_preview" target="_blank" rel="noopener">Instagram</a></li>
       <li><a href="/consult">상담지</a></li>
     </ul>
-    <a class="cta" href="#reserve">예약하기</a>
-    <button class="menu-toggle" aria-label="menu" onclick="document.getElementById('m').scrollIntoView()">☰</button>
+    <a class="cta" href="#location">예약 문의</a>
   </div>
 </header>
 
 <a id="top"></a>
 
 <!-- HERO -->
-<section class="hero" style="border-top:0; padding-top:64px">
-  <img class="mark" src="logo.png" alt="LEANON" onerror="this.outerHTML='<div style=&quot;font-size:40px;letter-spacing:.3em;font-weight:700&quot;>LEANON</div>'" />
-  <h1>Curate your own vibe</h1>
-  <p>트렌드는 스치듯 지나가지만, 잘 맞는 스타일은 오래 남습니다.<br/>당신에게 꼭 맞는 스타일을 함께 설계합니다.</p>
-  <div class="btns">
-    <a class="btn btn-solid" href="#reserve">예약하기</a>
-    <a class="btn btn-ghost" href="/consult">상담지 작성</a>
+<section class="poster" style="background:#d7d8d5">
+  <img src="assets/posters/tpl-04.jpg" alt="LEANON — Curate your own vibe" />
+  <div class="hero-cta">
+    <a class="btn btn-solid" href="/consult">상담지 작성</a>
+    <a class="btn" href="#menu">가격 보기</a>
   </div>
+  <div class="scrollcue">Scroll</div>
 </section>
 
-<!-- ABOUT -->
-<section id="about">
-  <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">About</span><h2>Styling Studio</h2></div>
-    <div class="about">
-      <p class="ko">LEANON은 단순한 미용실이 아닌, 당신에게 꼭 맞는 스타일을 설계하는<br/>상담 기반 스타일링 스튜디오입니다. 개성과 조화의 균형 속에서<br/>가장 당신다운 모습을 찾아드립니다.</p>
-      <p class="en">A space where we curate the beauty hidden within each individual. LEANON is more than just a hair salon — it is a consultation-based styling studio that designs looks tailored to you. Trends come and go, but the right style lasts forever.</p>
-    </div>
-  </div>
-</section>
+<!-- POSTER SCROLL -->
+<section class="poster" style="background:#a6a39d"><img src="assets/posters/poster-08.jpg" alt="One face, one vibe" /></section>
+<section class="poster" style="background:#8d8d8b"><img src="assets/posters/poster-14.jpg" alt="Curate your own vibe" /></section>
+<section class="poster" style="background:#c8c7c3"><img src="assets/posters/poster-13.jpg" alt="Curate your own vibe" /></section>
+<section class="poster" style="background:#c4c3bf"><img src="assets/posters/poster-10.jpg" alt="The right style lasts forever" /></section>
 
 <!-- MENU -->
-<section id="menu">
+<div class="paper">
+<section class="block" id="menu">
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Price</span><h2>Menu</h2></div>
     <div class="menu-grid">
@@ -178,12 +150,9 @@
         <div class="row"><span class="name">맨즈 / 숏 / 뿌리</span><span class="dots"></span><span class="price">120,000</span></div>
         <div class="row"><span class="name">보브 / 단발</span><span class="dots"></span><span class="price">150,000</span></div>
         <div class="row"><span class="name">미디움</span><span class="dots"></span><span class="price">180,000</span></div>
-        <div class="row"><span class="name">롱</span><span class="dots"></span><span class="price">210,000</span></div>
-        <div class="row"><span class="name">롱롱</span><span class="dots"></span><span class="price">230,000</span></div>
+        <div class="row"><span class="name">롱 / 롱롱</span><span class="dots"></span><span class="price">210,000~</span></div>
         <div class="grp">— High Light 하이라이트</div>
-        <div class="row"><span class="name">부분</span><span class="dots"></span><span class="price">100,000</span></div>
-        <div class="row"><span class="name">하프</span><span class="dots"></span><span class="price">150,000</span></div>
-        <div class="row"><span class="name">전체</span><span class="dots"></span><span class="price">200,000</span></div>
+        <div class="row"><span class="name">부분 / 하프 / 전체</span><span class="dots"></span><span class="price">100,000~</span></div>
       </div>
 
       <div class="mcat">
@@ -193,29 +162,21 @@
         <div class="row"><span class="name">단발</span><span class="dots"></span><span class="price">210,000</span></div>
         <div class="row"><span class="name">미디움 / 롱</span><span class="dots"></span><span class="price">250,000</span></div>
         <div class="row"><span class="name">맨즈</span><span class="dots"></span><span class="price">130,000</span></div>
-        <div class="grp">원장 Director</div>
-        <div class="row"><span class="name">숏</span><span class="dots"></span><span class="price">250,000</span></div>
-        <div class="row"><span class="name">단발</span><span class="dots"></span><span class="price">300,000</span></div>
-        <div class="row"><span class="name">미디움 / 롱</span><span class="dots"></span><span class="price">340,000</span></div>
-        <div class="row"><span class="name">맨즈</span><span class="dots"></span><span class="price">210,000</span></div>
         <div class="grp">부분펌 Partial</div>
         <div class="row"><span class="name">뿌리볼륨</span><span class="dots"></span><span class="price">100,000</span></div>
         <div class="row"><span class="name">앞머리펌</span><span class="dots"></span><span class="price">70,000</span></div>
         <div class="row"><span class="name">뿌리매직</span><span class="dots"></span><span class="price">170,000</span></div>
         <div class="row"><span class="name">다운펌</span><span class="dots"></span><span class="price">20,000</span></div>
-        <div class="row"><span class="name">전체다운펌</span><span class="dots"></span><span class="price">50,000</span></div>
-        <div class="grp" style="color:var(--muted)">※ 실장·부원장 펌 가격은 매장 문의</div>
+        <div class="grp" style="color:var(--muted)">※ 실장·부원장·원장 펌 가격은 매장 문의</div>
       </div>
 
       <div class="mcat">
-        <h3>Care &amp; Dry</h3><div class="sub">클리닉 · 드라이</div>
+        <h3>Care &amp; Dry</h3><div class="sub">클리닉 · 드라이 · 멤버십</div>
         <div class="grp">Clinic 클리닉</div>
         <div class="row"><span class="name">풀코스 케어</span><span class="dots"></span><span class="price">150,000</span></div>
         <div class="row"><span class="name">에센셜 케어 <span class="tier">두피/모발</span></span><span class="dots"></span><span class="price">90,000</span></div>
         <div class="grp">Dry 드라이</div>
-        <div class="row"><span class="name">디자이너</span><span class="dots"></span><span class="price">25,000</span></div>
-        <div class="row"><span class="name">실장</span><span class="dots"></span><span class="price">30,000</span></div>
-        <div class="row"><span class="name">부원장 / 원장</span><span class="dots"></span><span class="price">35,000</span></div>
+        <div class="row"><span class="name">디자이너 / 실장</span><span class="dots"></span><span class="price">25,000~</span></div>
         <div class="row"><span class="name">샴푸</span><span class="dots"></span><span class="price">10,000</span></div>
         <div class="row"><span class="name">업스타일</span><span class="dots"></span><span class="price">60,000~90,000</span></div>
         <div class="grp">Membership 멤버십</div>
@@ -228,49 +189,46 @@
   </div>
 </section>
 
-<!-- LENGTH GUIDE -->
-<section id="length">
-  <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">Guide</span><h2>Hair Length</h2></div>
-    <div class="length">
-      <div class="lrow"><div class="lname">숏 <em>Short</em></div><div class="ldesc">귀 밑 · Below the ears</div></div>
-      <div class="lrow"><div class="lname">단발 <em>Bob</em></div><div class="ldesc">어깨 위 · Above the shoulders</div></div>
-      <div class="lrow"><div class="lname">미디움 <em>Medium</em></div><div class="ldesc">어깨선~쇄골 · Shoulder to collarbone</div></div>
-      <div class="lrow"><div class="lname">롱 <em>Long</em></div><div class="ldesc">쇄골 아래 · Below the collarbone</div></div>
-      <div class="lrow"><div class="lname">롱롱 <em>Extra Long</em></div><div class="ldesc">가슴 아래 · Below the chest</div></div>
-    </div>
-  </div>
-</section>
-
 <!-- LOCATION -->
-<section id="location">
+<section class="block" id="location" style="border-top:1px solid var(--line)">
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Visit</span><h2>Location</h2></div>
     <div class="loc-grid">
       <div class="loc">
         <dl>
-          <dt>Address</dt><dd><span class="fill">[매장 주소 입력]</span></dd>
-          <dt>Hours</dt><dd><span class="fill">[영업시간 입력]</span> <span style="color:var(--muted);font-size:13px">예: 매일 11:00 – 21:00</span></dd>
-          <dt>Tel</dt><dd><span class="fill">[전화번호 입력]</span></dd>
-          <dt>Reservation</dt><dd id="reserve"><span class="fill">[예약 링크 입력 — 네이버 예약 등]</span></dd>
+          <dt>Address</dt>
+          <dd>서울 성동구 상원6길 5-1<br/><span style="color:var(--muted);font-size:13.5px">5-1 Sangwon 6-gil, Seongdong-gu, Seoul</span><br/>
+            <a href="https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%20%EC%84%B1%EB%8F%99%EA%B5%AC%20%EC%83%81%EC%9B%906%EA%B8%B8%205-1" target="_blank" rel="noopener" style="font-size:13.5px">네이버 지도에서 보기 ↗</a></dd>
+          <dt>Hours</dt><dd>매일 10:00 – 19:00</dd>
+          <dt>Instagram</dt><dd><a href="https://instagram.com/lean.on_preview" target="_blank" rel="noopener">@lean.on_preview</a></dd>
+          <dt>Reservation</dt><dd><span class="fill">[예약 링크·전화번호 입력]</span> <span style="color:var(--muted);font-size:13px">— 네이버 예약 / 전화 등</span></dd>
         </dl>
       </div>
-      <a class="mapbox" href="#" onclick="return false">지도 자리 — 주소가 정해지면<br/>네이버/구글 지도를 여기에 넣을게요</a>
+      <div class="posterimg">
+        <img src="assets/posters/poster-11.jpg" alt="LEANON — Welcome" loading="lazy" />
+      </div>
     </div>
   </div>
 </section>
+</div>
 
 <!-- FOOTER -->
-<footer id="m">
-  <img class="fmark" src="logo.png" alt="LEANON" onerror="this.outerHTML='<div style=&quot;font-weight:700;letter-spacing:.3em&quot;>LEANON</div>'" />
+<footer>
+  <img class="fmark" src="assets/brand/symbol-dark.png" alt="LEANON" onerror="this.outerHTML='<div style=&quot;font-weight:700;letter-spacing:.3em&quot;>LEANON</div>'" />
   <div class="slogan">Curate your own vibe</div>
   <div class="social">
-    <a href="#" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://instagram.com/lean.on_preview" target="_blank" rel="noopener">Instagram</a>
     <a href="/consult">상담지</a>
-    <a href="#reserve">예약</a>
+    <a href="#menu">Price</a>
+    <a href="#location">Location</a>
   </div>
-  <div class="copy">© LEANON. All rights reserved. · <a href="/consult">상담 문의</a></div>
+  <div class="copy">© LEANON. All rights reserved.</div>
 </footer>
+
+<script>
+  var hdr=document.getElementById('hdr');
+  addEventListener('scroll',function(){ hdr.classList.toggle('solid', scrollY>60); },{passive:true});
+</script>
 
 </body>
 </html>
