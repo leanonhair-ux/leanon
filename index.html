@@ -7,7 +7,7 @@
 <meta name="description" content="LEANON — 당신에게 꼭 맞는 스타일을 설계하는 상담 기반 스타일링 스튜디오. 서울 성동구." />
 <meta property="og:title" content="LEANON — Curate your own vibe" />
 <meta property="og:description" content="상담 기반 스타일링 스튜디오. Curate your own vibe." />
-<meta property="og:image" content="assets/posters/poster-14.jpg" />
+<meta property="og:image" content="assets/hero/main.jpg" />
 <meta property="og:type" content="website" />
 <style>
   :root{ --ink:#1a1a1a; --paper:#f2f0eb; --muted:#8c877d; --line:#e2ddd3; --line-strong:#cfc9bd; --maxw:1080px; }
@@ -39,6 +39,8 @@
   /* POSTER SECTIONS */
   .poster{position:relative; min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
   .poster img{width:100%; height:100%; object-fit:contain; position:absolute; inset:0; margin:auto}
+  /* hero is a landscape photo — fill the viewport */
+  .poster.hero img{object-fit:cover; object-position:center 42%}
   /* hero overlay */
   .hero-cta{position:absolute; left:0; right:0; bottom:15%; z-index:5; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; padding:0 24px}
   .btn{display:inline-block; font-size:13px; letter-spacing:.1em; padding:13px 26px; border-radius:999px; border:1px solid var(--ink); background:rgba(242,240,235,.6); backdrop-filter:blur(2px); transition:.2s}
@@ -107,8 +109,8 @@
 <a id="top"></a>
 
 <!-- HERO -->
-<section class="poster" style="background:#a6a39d">
-  <img src="assets/posters/poster-08.jpg" alt="One face, one vibe — LEANON" />
+<section class="poster hero" style="background:#eef0f1">
+  <img src="assets/hero/main.jpg" alt="LEANON" />
   <div class="scrollcue">Scroll</div>
 </section>
 
