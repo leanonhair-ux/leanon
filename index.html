@@ -28,13 +28,13 @@
     transition:background .3s;}
   header.solid{background:rgba(244,242,238,.9); border-bottom:1px solid var(--line)}
   .nav{display:flex; align-items:center; justify-content:space-between; height:60px}
-  .nav .logo img{height:26px; width:auto}
+  .nav .logo img{height:34px; width:auto}
   .nav ul{display:flex; gap:26px; list-style:none; margin:0; padding:0}
   .nav ul a{font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:#33302b}
   .nav ul a:hover{color:#000}
   .nav .cta{font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; border:1px solid var(--ink); padding:8px 15px; border-radius:999px}
   .nav .cta:hover{background:var(--ink); color:#fff}
-  @media(max-width:720px){ .nav ul{display:none} }
+  @media(max-width:720px){ .nav ul{display:none} .nav{height:64px} .nav .logo img{height:44px} }
 
   /* POSTER SECTIONS */
   .poster{position:relative; min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
