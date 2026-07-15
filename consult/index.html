@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>LEANON — 상담지</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    color-scheme:light;
+    --ink:#1c1a17; --muted:#8a8377; --line:#e2ddd5; --bg:#ffffff; --radius:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:32px 22px 120px}
+  .brand{text-align:center; margin-bottom:26px}
+  .brand img{width:180px; max-width:60%; height:auto; display:block; margin:0 auto}
+
+  /* 언어 전환 */
+  .langbar{position:fixed; top:10px; right:12px; z-index:20; display:flex; align-items:center; gap:2px;
+           background:rgba(255,255,255,.92); backdrop-filter:blur(6px); border:1px solid var(--line);
+           border-radius:999px; padding:4px 6px}
+  .langbar .globe{font-size:14px; margin:0 3px 0 2px}
+  .langbar button{border:none; background:transparent; font-family:inherit; font-size:12px; font-weight:600;
+                  color:var(--muted); padding:4px 7px; border-radius:999px; cursor:pointer; line-height:1}
+  .langbar button.active{background:var(--ink); color:#fff}
+
+  .title{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+         padding-bottom:12px; border-bottom:2px solid var(--ink); margin-top:22px}
+  .title h1{font-size:20px; letter-spacing:3px; font-weight:700}
+  .title span{font-size:11px; color:var(--muted); text-align:right; line-height:1.4}
+  .sec{margin-top:30px}
+  .sec > h2{font-size:13px; letter-spacing:2.5px; font-weight:700; margin-bottom:16px}
+  .field{margin-bottom:20px}
+  .field > label.q{display:block; font-size:14.5px; font-weight:600; margin-bottom:9px}
+  .hint{color:var(--muted); font-weight:400; font-size:12px; margin-left:4px}
+  .in{width:100%; border:none; border-bottom:1px solid var(--line); background:transparent;
+      font-size:15px; padding:9px 2px; color:var(--ink); font-family:inherit}
+  .in:focus{outline:none; border-bottom-color:var(--ink)}
+  .row{display:flex; gap:12px}
+  .row > *{flex:1}
+  .inline{display:flex; align-items:center; gap:8px}
+  .inline .in{flex:0 0 72px; text-align:center}
+  .inline .unit{font-size:14px; color:var(--muted)}
+  .opts{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{position:relative; border:1px solid var(--line); border-radius:999px;
+        padding:10px 15px; font-size:14px; cursor:pointer; user-select:none; transition:.15s}
+  .chip input{position:absolute; opacity:0; pointer-events:none}
+  .chip:has(input:checked){background:var(--ink); color:#fff; border-color:var(--ink)}
+  .chip.disabled{opacity:.35; pointer-events:none}
+  textarea.in{border:1px solid var(--line); border-radius:var(--radius); min-height:78px; padding:12px; resize:vertical}
+  .consent{margin-top:34px; padding-top:20px; border-top:1px solid var(--line)}
+  .consent .q{font-size:14.5px; font-weight:600}
+  .consent .note{color:var(--muted); font-size:12px; margin:6px 0 12px}
+  .submitbar{position:fixed; left:0; right:0; bottom:0; background:var(--bg);
+             border-top:1px solid var(--line); padding:14px 22px calc(14px + env(safe-area-inset-bottom));}
+  .submitbar .inner{max-width:560px; margin:0 auto}
+  button.submit{width:100%; border:none; border-radius:12px; background:var(--ink); color:#fff;
+                font-size:16px; font-weight:700; padding:16px 0; cursor:pointer; font-family:inherit}
+  button.submit:disabled{opacity:.4}
+  .done{display:none; text-align:center; padding:80px 22px}
+  .done h2{font-size:22px; margin-bottom:12px}
+  .done p{color:var(--muted); font-size:15px; line-height:1.7}
+  .footer-tag{text-align:center; margin-top:40px; color:var(--muted); font-size:12px; letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<div class="langbar">
+  <span class="globe">🌐</span>
+  <button data-lang="ko">한</button>
+  <button data-lang="en">EN</button>
+  <button data-lang="zh">中</button>
+  <button data-lang="ja">日</button>
+</div>
+
+<div class="wrap" id="formView">
+  <div class="brand"><img src="../logo.png" alt="LEANON" onerror="this.outerHTML='&lt;div style=&quot;font-size:34px;letter-spacing:6px;font-weight:800&quot;&gt;LEANON&lt;/div&gt;'" /></div>
+
+  <div class="title">
+    <h1>ABOUT CLIENT</h1>
+    <span data-i18n="subtitle">원활한 시술을 위해 고객님의 의견을 작성 부탁드립니다.</span>
+  </div>
+
+  <form id="consultForm">
+    <div class="sec">
+      <h2>INFORMATION</h2>
+      <div class="field">
+        <label class="q" for="name" data-i18n="name_label">고객 성명</label>
+        <input class="in" id="name" name="name" type="text" required autocomplete="name" />
+      </div>
+      <div class="field">
+        <label class="q" for="birth" data-i18n="birth_label">생년월일</label>
+        <input class="in" id="birth" name="birth" type="text" inputmode="numeric" data-i18n-ph="birth_ph" placeholder="예) 1996.03.21" />
+      </div>
+      <div class="field">
+        <label class="q" data-i18n="region_label">거주 지역</label>
+        <div class="row">
+          <input class="in" name="region_si" type="text" data-i18n-ph="region_si_ph" placeholder="시 (예: 서울)" />
+          <input class="in" name="region_gu" type="text" data-i18n-ph="region_gu_ph" placeholder="구 (예: 성동구)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>CHECK LIST <span class="hint" data-i18n="checklist_hint">마지막 시술 시기</span></h2>
+      <div class="field">
+        <label class="q" data-i18n="cut_label">컷 (Cut)</label>
+        <div class="inline"><input class="in" name="last_cut" type="number" inputmode="numeric" min="0" /><span class="unit" data-i18n="months_ago">개월 전</span></div>
+      </div>
+      <div class="field">
+        <label class="q" data-i18n="perm_label">펌 (Perm)</label>
+        <div class="inline"><input class="in" name="last_perm" type="number" inputmode="numeric" min="0" /><span class="unit" data-i18n="months_ago">개월 전</span></div>
+      </div>
+      <div class="field">
+        <label class="q" data-i18n="color_label">컬러 (Color)</label>
+        <div class="inline" style="margin-bottom:10px"><input class="in" name="last_color" type="number" inputmode="numeric" min="0" /><span class="unit" data-i18n="months_ago">개월 전</span></div>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="color_type" value="탈색"><span data-i18n="color_bleach">탈색</span></label>
+          <label class="chip"><input type="radio" name="color_type" value="톤다운"><span data-i18n="color_tonedown">톤다운</span></label>
+          <label class="chip"><input type="radio" name="color_type" value="블랙"><span data-i18n="color_black">블랙</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>CUSTOMER TYPE</h2>
+      <div class="field">
+        <label class="q" data-i18n="ref_label">디자인 레퍼런스</label>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="reference" value="사진 있어요"><span data-i18n="ref_photo">사진 있어요</span></label>
+          <label class="chip"><input type="radio" name="reference" value="추천 받고 싶어요"><span data-i18n="ref_rec">추천 받고 싶어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q"><span data-i18n="today_label">오늘 시술 진행</span> <span class="hint" data-i18n="today_hint">*시술시간이 오래 소요될 수 있습니다</span></label>
+        <div class="opts">
+          <label class="chip"><input type="radio" name="today" value="예약한 시술만 원해요"><span data-i18n="today_reserved">예약한 시술만 원해요</span></label>
+          <label class="chip"><input type="radio" name="today" value="추가 시술 필요하면 원해요"><span data-i18n="today_more">추가 시술 필요하면 원해요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q"><span data-i18n="length_label">선호하는 기장감</span></label>
+        <div class="opts">
+          <label class="chip"><input type="checkbox" name="length" value="숏"><span data-i18n="len_short">숏</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="단발"><span data-i18n="len_bob">단발</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="중단발"><span data-i18n="len_mediumbob">중단발</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="미디움"><span data-i18n="len_medium">미디움</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="롱"><span data-i18n="len_long">롱</span></label>
+          <label class="chip"><input type="checkbox" name="length" value="상관없어요"><span data-i18n="len_any">상관없어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q"><span data-i18n="image_label">추구하는 이미지</span> <span class="hint" data-i18n="image_hint">최대 2개</span></label>
+        <div class="opts" data-max="2">
+          <label class="chip"><input type="checkbox" name="image" value="사랑스러운"><span data-i18n="img_lovely">사랑스러운</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="여성스러운"><span data-i18n="img_feminine">여성스러운</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="모던/고급"><span data-i18n="img_modern">모던/고급</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="힙/트렌디"><span data-i18n="img_hip">힙/트렌디</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="영/캐주얼"><span data-i18n="img_young">영/캐주얼</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="개성/유니크"><span data-i18n="img_unique">개성/유니크</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="시크/전문적인"><span data-i18n="img_chic">시크/전문적인</span></label>
+          <label class="chip"><input type="checkbox" name="image" value="중성적인"><span data-i18n="img_neutral">중성적인</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q"><span data-i18n="concern_label">가장 고민 &amp; 보완하고 싶은 점</span></label>
+        <div class="opts">
+          <label class="chip"><input type="checkbox" name="concern" value="턱"><span data-i18n="con_jaw">턱</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="광대"><span data-i18n="con_cheek">광대</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="얼굴 길이"><span data-i18n="con_facelen">얼굴 길이</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="목 길이"><span data-i18n="con_necklen">목 길이</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="두상"><span data-i18n="con_head">두상</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="모질"><span data-i18n="con_texture">모질</span></label>
+          <label class="chip"><input type="checkbox" name="concern" value="모르겠어요"><span data-i18n="con_idk">모르겠어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q"><span data-i18n="styling_label">평소 스타일링</span></label>
+        <div class="opts">
+          <label class="chip"><input type="checkbox" name="styling" value="롤드라이"><span data-i18n="st_roll">롤드라이</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="고데기"><span data-i18n="st_iron">고데기</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="에어랩"><span data-i18n="st_airwrap">에어랩</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="말리기만 해요"><span data-i18n="st_blowdry">말리기만 해요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="거의 묶어요"><span data-i18n="st_mostlytied">거의 묶어요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="가끔 묶어요"><span data-i18n="st_sometimestied">가끔 묶어요</span></label>
+          <label class="chip"><input type="checkbox" name="styling" value="안 묶어요"><span data-i18n="st_nevertied">안 묶어요</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="q" for="past"><span data-i18n="past_label">과거 시술 시 불만족 했던 점</span> <span class="hint" data-i18n="past_hint">헤어 디자인 / 서비스 등</span></label>
+        <textarea class="in" id="past" name="past" data-i18n-ph="past_ph" placeholder="자유롭게 작성해 주세요"></textarea>
+      </div>
+    </div>
+
+    <div class="consent">
+      <div class="q" data-i18n="consent_q">개인정보 수집 및 활용에 동의하시겠습니까?</div>
+      <div class="note" data-i18n="consent_note">동의를 거부할 수 있으며, 거부 시 프로모션 혜택 및 이벤트 정보는 제공되지 않습니다.</div>
+      <div class="opts">
+        <label class="chip"><input type="radio" name="consent" value="네" required><span data-i18n="consent_yes">네</span></label>
+        <label class="chip"><input type="radio" name="consent" value="아니오"><span data-i18n="consent_no">아니오</span></label>
+      </div>
+    </div>
+
+    <div class="footer-tag">Curate your own vibe · LEANON</div>
+  </form>
+</div>
+
+<div class="submitbar" id="submitbar">
+  <div class="inner"><button class="submit" type="submit" form="consultForm" id="submitBtn" data-i18n="submit_btn">제출하기</button></div>
+</div>
+
+<div class="done" id="doneView">
+  <h2 data-i18n="done_title">제출이 완료되었습니다</h2>
+  <p data-i18n="done_msg">소중한 답변 감사합니다. 담당 디자이너가 확인 후 상담을 진행해 드릴게요.</p>
+</div>
+
+<script>
+  /* ═══════ 번역 ═══════ */
+  const T = {
+    ko: {
+      subtitle:"원활한 시술을 위해 고객님의 의견을 작성 부탁드립니다.",
+      name_label:"고객 성명", birth_label:"생년월일", birth_ph:"예) 1996.03.21",
+      region_label:"거주 지역", region_si_ph:"시 (예: 서울)", region_gu_ph:"구 (예: 성동구)",
+      checklist_hint:"마지막 시술 시기", cut_label:"컷 (Cut)", perm_label:"펌 (Perm)", color_label:"컬러 (Color)", months_ago:"개월 전",
+      color_bleach:"탈색", color_tonedown:"톤다운", color_black:"블랙",
+      ref_label:"디자인 레퍼런스", ref_photo:"사진 있어요", ref_rec:"추천 받고 싶어요",
+      today_label:"오늘 시술 진행", today_hint:"*시술시간이 오래 소요될 수 있습니다", today_reserved:"예약한 시술만 원해요", today_more:"추가 시술 필요하면 원해요",
+      length_label:"선호하는 기장감", len_short:"숏", len_bob:"단발", len_mediumbob:"중단발", len_medium:"미디움", len_long:"롱", len_any:"상관없어요",
+      image_label:"추구하는 이미지", image_hint:"최대 2개",
+      img_lovely:"사랑스러운", img_feminine:"여성스러운", img_modern:"모던/고급", img_hip:"힙/트렌디", img_young:"영/캐주얼", img_unique:"개성/유니크", img_chic:"시크/전문적인", img_neutral:"중성적인",
+      concern_label:"가장 고민 & 보완하고 싶은 점", con_jaw:"턱", con_cheek:"광대", con_facelen:"얼굴 길이", con_necklen:"목 길이", con_head:"두상", con_texture:"모질", con_idk:"모르겠어요",
+      styling_label:"평소 스타일링", st_roll:"롤드라이", st_iron:"고데기", st_airwrap:"에어랩", st_blowdry:"말리기만 해요", st_mostlytied:"거의 묶어요", st_sometimestied:"가끔 묶어요", st_nevertied:"안 묶어요",
+      past_label:"과거 시술 시 불만족 했던 점", past_hint:"헤어 디자인 / 서비스 등", past_ph:"자유롭게 작성해 주세요",
+      consent_q:"개인정보 수집 및 활용에 동의하시겠습니까?", consent_note:"동의를 거부할 수 있으며, 거부 시 프로모션 혜택 및 이벤트 정보는 제공되지 않습니다.", consent_yes:"네", consent_no:"아니오",
+      submit_btn:"제출하기", submitting:"제출 중...", done_title:"제출이 완료되었습니다", done_msg:"소중한 답변 감사합니다. 담당 디자이너가 확인 후 상담을 진행해 드릴게요.", error_msg:"제출 중 오류가 발생했습니다. 다시 시도해 주세요."
+    },
+    en: {
+      subtitle:"Please share your input for a smooth procedure.",
+      name_label:"Name", birth_label:"Date of Birth", birth_ph:"e.g. 1996.03.21",
+      region_label:"Residential Area", region_si_ph:"City (e.g. Seoul)", region_gu_ph:"District (e.g. Seongdong)",
+      checklist_hint:"Last treatment", cut_label:"Cut", perm_label:"Perm", color_label:"Color", months_ago:"months ago",
+      color_bleach:"Bleach", color_tonedown:"Tone Down", color_black:"Black",
+      ref_label:"Design Reference", ref_photo:"I have a photo", ref_rec:"I want a recommendation",
+      today_label:"Today's Procedure", today_hint:"*The procedure may take a while", today_reserved:"Only the reserved procedure", today_more:"Open to more if needed",
+      length_label:"Preferred Length", len_short:"Short", len_bob:"Bob", len_mediumbob:"Medium Bob", len_medium:"Medium", len_long:"Long", len_any:"Doesn't matter",
+      image_label:"Desired Image", image_hint:"Max 2",
+      img_lovely:"Lovely", img_feminine:"Feminine", img_modern:"Modern/Luxurious", img_hip:"Hip/Trendy", img_young:"Young/Casual", img_unique:"Individual/Unique", img_chic:"Chic/Professional", img_neutral:"Neutral",
+      concern_label:"Biggest Concerns & Areas to Improve", con_jaw:"Jaw", con_cheek:"Cheekbones", con_facelen:"Face length", con_necklen:"Neck length", con_head:"Head shape", con_texture:"Hair texture", con_idk:"I don't know",
+      styling_label:"Usual Styling", st_roll:"Roll-dry", st_iron:"Curling iron", st_airwrap:"Airwrap", st_blowdry:"Just blow-dry", st_mostlytied:"Mostly tied up", st_sometimestied:"Occasionally tied up", st_nevertied:"Never tied up",
+      past_label:"Previous Treatment Dissatisfaction", past_hint:"Hair design / service etc.", past_ph:"You can write in English",
+      consent_q:"Do you agree to the collection and use of personal information?", consent_note:"You may decline; if you do, promotional benefits and event info won't be provided.", consent_yes:"Yes", consent_no:"No",
+      submit_btn:"Submit", submitting:"Submitting...", done_title:"Submission complete", done_msg:"Thank you for your answers. Your designer will review and proceed with the consultation.", error_msg:"An error occurred. Please try again."
+    },
+    zh: {
+      subtitle:"为了顺利完成造型，请填写您的意见。",
+      name_label:"姓名", birth_label:"出生日期", birth_ph:"例) 1996.03.21",
+      region_label:"居住地区", region_si_ph:"市 (例: 首尔)", region_gu_ph:"区 (例: 城东区)",
+      checklist_hint:"上次造型时间", cut_label:"剪发 (Cut)", perm_label:"烫发 (Perm)", color_label:"染发 (Color)", months_ago:"个月前",
+      color_bleach:"漂发", color_tonedown:"调暗", color_black:"黑色",
+      ref_label:"设计参考", ref_photo:"我有照片", ref_rec:"想听推荐",
+      today_label:"今日施术", today_hint:"*施术时间可能较长", today_reserved:"只做预约的项目", today_more:"需要的话可加项目",
+      length_label:"偏好长度", len_short:"短发", len_bob:"波波头", len_mediumbob:"中长波波", len_medium:"中长发", len_long:"长发", len_any:"都可以",
+      image_label:"期望形象", image_hint:"最多2个",
+      img_lovely:"可爱", img_feminine:"女人味", img_modern:"摩登/高级", img_hip:"潮流", img_young:"年轻/休闲", img_unique:"个性/独特", img_chic:"干练/专业", img_neutral:"中性",
+      concern_label:"最想改善的地方", con_jaw:"下巴", con_cheek:"颧骨", con_facelen:"脸长", con_necklen:"脖子长度", con_head:"头型", con_texture:"发质", con_idk:"不清楚",
+      styling_label:"日常造型", st_roll:"卷发吹整", st_iron:"电卷棒", st_airwrap:"Airwrap", st_blowdry:"只吹干", st_mostlytied:"经常扎起", st_sometimestied:"偶尔扎起", st_nevertied:"不扎",
+      past_label:"过去不满意的地方", past_hint:"发型 / 服务等", past_ph:"您可以用中文填写",
+      consent_q:"是否同意收集及使用个人信息？", consent_note:"您可以拒绝，拒绝后将不提供促销优惠及活动信息。", consent_yes:"是", consent_no:"否",
+      submit_btn:"提交", submitting:"提交中...", done_title:"提交完成", done_msg:"感谢您的填写。设计师确认后将为您进行咨询。", error_msg:"提交时出错，请重试。"
+    },
+    ja: {
+      subtitle:"スムーズな施術のため、ご意見をお書きください。",
+      name_label:"お名前", birth_label:"生年月日", birth_ph:"例) 1996.03.21",
+      region_label:"お住まいの地域", region_si_ph:"市 (例: ソウル)", region_gu_ph:"区 (例: 城東区)",
+      checklist_hint:"前回の施術時期", cut_label:"カット (Cut)", perm_label:"パーマ (Perm)", color_label:"カラー (Color)", months_ago:"ヶ月前",
+      color_bleach:"ブリーチ", color_tonedown:"トーンダウン", color_black:"ブラック",
+      ref_label:"デザイン参考", ref_photo:"写真があります", ref_rec:"おすすめ希望",
+      today_label:"本日の施術", today_hint:"*施術時間が長くなる場合があります", today_reserved:"予約した施術のみ", today_more:"必要なら追加も希望",
+      length_label:"好みの長さ", len_short:"ショート", len_bob:"ボブ", len_mediumbob:"ミディアムボブ", len_medium:"ミディアム", len_long:"ロング", len_any:"どちらでも",
+      image_label:"目指すイメージ", image_hint:"最大2つ",
+      img_lovely:"ラブリー", img_feminine:"フェミニン", img_modern:"モダン/高級", img_hip:"ヒップ/トレンディ", img_young:"ヤング/カジュアル", img_unique:"個性/ユニーク", img_chic:"シック/プロ", img_neutral:"中性的",
+      concern_label:"一番の悩み・補いたい点", con_jaw:"顎", con_cheek:"頬骨", con_facelen:"顔の長さ", con_necklen:"首の長さ", con_head:"頭の形", con_texture:"髪質", con_idk:"わからない",
+      styling_label:"普段のスタイリング", st_roll:"ロールドライ", st_iron:"コテ", st_airwrap:"エアラップ", st_blowdry:"乾かすだけ", st_mostlytied:"ほぼ結ぶ", st_sometimestied:"たまに結ぶ", st_nevertied:"結ばない",
+      past_label:"過去の施術で不満だった点", past_hint:"ヘアデザイン / サービス等", past_ph:"日本語でご記入いただけます",
+      consent_q:"個人情報の収集・利用に同意しますか？", consent_note:"拒否できますが、拒否の場合プロモーション特典やイベント情報は提供されません。", consent_yes:"はい", consent_no:"いいえ",
+      submit_btn:"送信する", submitting:"送信中...", done_title:"送信が完了しました", done_msg:"ご回答ありがとうございます。担当デザイナーが確認のうえ、カウンセリングを行います。", error_msg:"送信中にエラーが発生しました。もう一度お試しください。"
+    }
+  };
+
+  let lang = localStorage.getItem('leanon_lang') || 'ko';
+  function applyLang(l){
+    if(!T[l]) l = 'ko';
+    lang = l;
+    localStorage.setItem('leanon_lang', l);
+    document.documentElement.lang = l;
+    document.querySelectorAll('[data-i18n]').forEach(el => { const v = T[l][el.dataset.i18n]; if(v!=null) el.textContent = v; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { const v = T[l][el.dataset.i18nPh]; if(v!=null) el.placeholder = v; });
+    document.querySelectorAll('.langbar button').forEach(b => b.classList.toggle('active', b.dataset.lang===l));
+  }
+  document.querySelectorAll('.langbar button').forEach(b => b.onclick = () => applyLang(b.dataset.lang));
+
+  /* 추구하는 이미지: 최대 2개 제한 */
+  document.querySelectorAll('.opts[data-max]').forEach(group => {
+    const max = +group.dataset.max;
+    group.addEventListener('change', () => {
+      const boxes = [...group.querySelectorAll('input[type=checkbox]')];
+      const checked = boxes.filter(b => b.checked).length;
+      boxes.forEach(b => b.closest('.chip').classList.toggle('disabled', !b.checked && checked >= max));
+    });
+  });
+
+  const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
+  const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  const form = document.getElementById('consultForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = T[lang].submitting;
+    const fd = new FormData(form);
+    const payload = {
+      name: fd.get('name'), birth: fd.get('birth'),
+      region_si: fd.get('region_si'), region_gu: fd.get('region_gu'),
+      last_cut: fd.get('last_cut') ? Number(fd.get('last_cut')) : null,
+      last_perm: fd.get('last_perm') ? Number(fd.get('last_perm')) : null,
+      last_color: fd.get('last_color') ? Number(fd.get('last_color')) : null,
+      color_type: fd.get('color_type'), reference: fd.get('reference'),
+      today: fd.get('today'), length: fd.getAll('length').join(', ') || null,
+      image: fd.getAll('image'), concern: fd.getAll('concern'), styling: fd.getAll('styling'),
+      past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
+    };
+    try {
+      if (sb) {
+        const { error } = await sb.from('consultations').insert(payload);
+        if (error) throw new Error(error.message);
+      } else {
+        console.log('제출 데이터(미리보기):', payload);
+      }
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('submitbar').style.display = 'none';
+      document.getElementById('doneView').style.display = 'block';
+      window.scrollTo(0, 0);
+    } catch (err) {
+      alert(T[lang].error_msg + '\n' + err.message);
+      btn.disabled = false; btn.textContent = T[lang].submit_btn;
+    }
+  });
+
+  applyLang(lang);
+</script>
+</body>
+</html>
