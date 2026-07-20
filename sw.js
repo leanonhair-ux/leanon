@@ -1,9 +1,8 @@
-// LEANON 직원 앱 서비스워커 — 루트(/)에 두어 /app, /consult_admin, /hire_admin 전체를 스코프로 잡는다.
-const CACHE = 'leanon-app-v1';
+// LEANON 상담 관리 앱 서비스워커 — 상담 관리 전용.
+const CACHE = 'leanon-app-v2';
 const SHELL = [
-  '/app/',
   '/consult_admin/',
-  '/hire_admin/',
+  '/logo.png',
   '/assets/app/icon-192.png',
   '/assets/app/icon-512.png',
   '/assets/brand/wordmark-dark.png'
@@ -41,7 +40,7 @@ self.addEventListener('fetch', (e) => {
         return res;
       })
       .catch(() =>
-        caches.match(req).then((hit) => hit || caches.match('/app/'))
+        caches.match(req).then((hit) => hit || caches.match('/consult_admin/'))
       )
   );
 });
