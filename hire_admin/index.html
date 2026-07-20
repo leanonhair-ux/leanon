@@ -264,7 +264,7 @@
   function render(){
     let list = rows.slice();
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
-    if(trackFilter!=="전체") list = list.filter(r => (r.track||"주니어")===trackFilter);
+    if(trackFilter!=="전체") list = list.filter(r => trackOf(r)===trackFilter);
     list = list.filter(inPeriod);
     $("count").textContent = `${list.length}명`;
     if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 지원자가 없어요.</div>`; return; }
@@ -281,6 +281,12 @@
   const igUrl = h => { const id=(h||"").replace(/^@/,"").trim(); return id ? `https://instagram.com/${encodeURIComponent(id)}` : null; };
   const qa = (q,a) => a ? `<div class="qa"><div class="qq">${q}</div><div class="aa">${esc(a)}</div></div>` : "";
 
+  /* track 컬럼이 있으면 그 값, 없으면 why_beauty 유무로 판별
+     (주니어 폼은 why_beauty 필수, 디자이너 폼엔 그 항목 없음) */
+  function trackOf(r){
+    if(r.track) return r.track;
+    return (r.why_beauty && String(r.why_beauty).trim()) ? "주니어" : "디자이너";
+  }
   function trackBadge(t){
     const v = t || "주니어";
     const bg = v==="디자이너" ? "#1c1a17" : "#efe7d8";
@@ -290,7 +296,7 @@
 
   /* 자기소개 문항은 직군에 따라 라벨이 다르다 (같은 컬럼, 다른 질문) */
   function essaysHTML(r){
-    if((r.track||"주니어")==="디자이너"){
+    if(trackOf(r)==="디자이너"){
       return qa("성향·성격 및 장단점", r.personality)
            + qa("시그니처 디자인·차별화된 강점", r.appeal)
            + qa("린온만의 차별점", r.leanon_diff)
@@ -311,7 +317,7 @@
     return `<div class="card" data-id="${r.id}">
       <div class="chead">
         <div>
-          <div class="cname">${esc(r.name)||"(이름없음)"}${trackBadge(r.track)}</div>
+          <div class="cname">${esc(r.name)||"(이름없음)"}${trackBadge(trackOf(r))}</div>
           <div class="cmeta">${esc(r.birth_mbti)||""}</div>
           <div class="cdate">🕓 ${fmtDT(r.created_at)} 지원</div>
         </div>
