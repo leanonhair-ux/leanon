@@ -136,6 +136,12 @@
     <div class="fchip" data-p="month">이번 달</div>
     <span class="dates"><input type="date" id="fromDate"> ~ <input type="date" id="toDate"></span>
   </div>
+  <div class="filterbar" id="trackbar">
+    <span class="plabel">직군</span>
+    <div class="fchip" data-t="전체">전체</div>
+    <div class="fchip" data-t="주니어">주니어</div>
+    <div class="fchip" data-t="디자이너">디자이너</div>
+  </div>
   <div class="count" id="count"></div>
   <div class="grid" id="grid"></div>
 </div>
@@ -160,6 +166,7 @@
   const STATUSES = ["대기","검토중","합격","불합격"];
   let rows = [];
   let statusFilter = "전체";
+  let trackFilter = "전체";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
   let pendingDelete = null;
@@ -177,7 +184,7 @@
     if(session) showApp(); else showLogin();
   }
   function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
-  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderStatusChips(); renderPeriodChips(); load(); }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderStatusChips(); renderTrackChips(); renderPeriodChips(); load(); }
 
   $("loginBtn").onclick = async () => {
     $("loginErr").textContent="";
@@ -194,6 +201,12 @@
     document.querySelectorAll("#statusbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.s===statusFilter));
   }
   document.querySelectorAll("#statusbar .fchip").forEach(c => c.onclick = () => { statusFilter=c.dataset.s; renderStatusChips(); render(); });
+
+  /* ── 직군(트랙) 필터 ── */
+  function renderTrackChips(){
+    document.querySelectorAll("#trackbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.t===trackFilter));
+  }
+  document.querySelectorAll("#trackbar .fchip").forEach(c => c.onclick = () => { trackFilter=c.dataset.t; renderTrackChips(); render(); });
 
   /* ── 기간 필터 ── */
   function renderPeriodChips(){
@@ -251,6 +264,7 @@
   function render(){
     let list = rows.slice();
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
+    if(trackFilter!=="전체") list = list.filter(r => (r.track||"주니어")===trackFilter);
     list = list.filter(inPeriod);
     $("count").textContent = `${list.length}명`;
     if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 지원자가 없어요.</div>`; return; }
@@ -267,13 +281,37 @@
   const igUrl = h => { const id=(h||"").replace(/^@/,"").trim(); return id ? `https://instagram.com/${encodeURIComponent(id)}` : null; };
   const qa = (q,a) => a ? `<div class="qa"><div class="qq">${q}</div><div class="aa">${esc(a)}</div></div>` : "";
 
+  function trackBadge(t){
+    const v = t || "주니어";
+    const bg = v==="디자이너" ? "#1c1a17" : "#efe7d8";
+    const fg = v==="디자이너" ? "#ffffff" : "#8a6d2f";
+    return `<span style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:${bg};color:${fg};vertical-align:middle;margin-left:6px">${esc(v)}</span>`;
+  }
+
+  /* 자기소개 문항은 직군에 따라 라벨이 다르다 (같은 컬럼, 다른 질문) */
+  function essaysHTML(r){
+    if((r.track||"주니어")==="디자이너"){
+      return qa("성향·성격 및 장단점", r.personality)
+           + qa("시그니처 디자인·차별화된 강점", r.appeal)
+           + qa("린온만의 차별점", r.leanon_diff)
+           + qa("가치관(인생/디자이너)", r.important_factor)
+           + qa("린온에서의 성장 계획", r.career_goal);
+    }
+    return qa("미용을 선택한 계기", r.why_beauty)
+         + qa("성격과 장단점", r.personality)
+         + qa("린온만의 차별점", r.leanon_diff)
+         + qa("입사 시 중요하게 보는 것", r.important_factor)
+         + qa("커리어 목표·포부", r.career_goal)
+         + qa("채용되어야 하는 이유", r.appeal);
+  }
+
   function cardHTML(r){
     const ig = igUrl(r.instagram);
     const opt = STATUSES.map(v=>`<option ${v===(r.status||"대기")?'selected':''}>${esc(v)}</option>`).join("");
     return `<div class="card" data-id="${r.id}">
       <div class="chead">
         <div>
-          <div class="cname">${esc(r.name)||"(이름없음)"}</div>
+          <div class="cname">${esc(r.name)||"(이름없음)"}${trackBadge(r.track)}</div>
           <div class="cmeta">${esc(r.birth_mbti)||""}</div>
           <div class="cdate">🕓 ${fmtDT(r.created_at)} 지원</div>
         </div>
@@ -291,12 +329,7 @@
 
       <details class="essays">
         <summary>자기소개 보기</summary>
-        ${qa("미용을 선택한 계기", r.why_beauty)}
-        ${qa("성격과 장단점", r.personality)}
-        ${qa("린온만의 차별점", r.leanon_diff)}
-        ${qa("입사 시 중요하게 보는 것", r.important_factor)}
-        ${qa("커리어 목표·포부", r.career_goal)}
-        ${qa("채용되어야 하는 이유", r.appeal)}
+        ${essaysHTML(r)}
       </details>
 
       <div class="statusrow">
