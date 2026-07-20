@@ -2,8 +2,19 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>LEANON — 채용 관리</title>
+
+<!-- PWA (직원 앱) -->
+<link rel="manifest" href="/app/manifest.webmanifest" />
+<meta name="theme-color" content="#ffffff" />
+<link rel="apple-touch-icon" href="/assets/app/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="LEANON" />
+<meta name="mobile-web-app-capable" content="yes" />
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{}));}</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{ color-scheme:light; --ink:#1c1a17; --muted:#8a8377; --line:#e6e1d9; --bg:#ffffff; --card:#f6f1ea; --radius:14px; }
@@ -113,8 +124,8 @@
 <!-- 대시보드 -->
 <div id="appView">
   <div class="topbar">
-    <img class="toplogo" src="../assets/brand/wordmark-dark.png" alt="LEANON"
-      onerror="this.onerror=null; this.src='../logo.png'; this.onerror=function(){this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'}" />
+    <a href="/app/" title="앱 홈" style="display:flex;align-items:center"><img class="toplogo" src="../assets/brand/wordmark-dark.png" alt="LEANON"
+      onerror="this.onerror=null; this.src='../logo.png'; this.onerror=function(){this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'}" /></a>
     <span class="sub">채용 관리</span>
     <span class="spacer"></span>
     <button id="refreshBtn">새로고침</button>

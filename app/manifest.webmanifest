@@ -1,0 +1,17 @@
+{
+  "name": "LEANON 직원",
+  "short_name": "LEANON",
+  "description": "LEANON 상담·채용 관리",
+  "lang": "ko",
+  "start_url": "/app/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f0eb",
+  "theme_color": "#f2f0eb",
+  "icons": [
+    { "src": "/assets/app/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/app/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/app/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
