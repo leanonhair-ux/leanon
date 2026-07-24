@@ -104,7 +104,7 @@
   <img class="loginlogo" src="../assets/brand/wordmark-dark.png" alt="LEANON"
     onerror="this.onerror=null; this.src='../logo.png'; this.onerror=function(){this.outerHTML='&lt;h1&gt;LEANON&lt;/h1&gt;'}" />
   <p>채용 관리 · 직원 전용</p>
-  <input id="email" type="email" placeholder="이메일" autocomplete="username" />
+  <input id="email" type="text" placeholder="아이디" autocomplete="username" autocapitalize="none" />
   <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
   <button id="loginBtn">로그인</button>
   <div id="loginErr"></div>
@@ -186,9 +186,11 @@
   function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
   function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderStatusChips(); renderTrackChips(); renderPeriodChips(); load(); }
 
+  // 아이디만 입력하면 자동으로 로그인용 도메인을 붙임 (직원은 이메일 외울 필요 없음)
+  const toEmail = v => { v=(v||"").trim(); return v.includes("@") ? v : v+"@leanon.co.kr"; };
   $("loginBtn").onclick = async () => {
     $("loginErr").textContent="";
-    const { error } = await sb.auth.signInWithPassword({ email:$("email").value.trim(), password:$("password").value });
+    const { error } = await sb.auth.signInWithPassword({ email:toEmail($("email").value), password:$("password").value });
     if(error){ $("loginErr").textContent="로그인 실패: 이메일/비밀번호를 확인해 주세요."; return; }
     showApp();
   };
