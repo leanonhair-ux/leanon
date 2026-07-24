@@ -76,10 +76,17 @@
   .transbtn:disabled{opacity:.5; cursor:default}
   .transresult{margin-top:6px; background:#f6f1ea}
 
-  .assign{display:flex; gap:8px; align-items:center; border-top:1px solid var(--line); padding-top:12px}
-  .assign label{font-size:12.5px; color:var(--muted)}
   select, .note-in{border:1px solid var(--line); border-radius:8px; padding:9px; font-size:13.5px; font-family:inherit; background:#fff}
-  .assign select{flex:1}
+  .assign{display:flex; gap:9px; align-items:center; margin-top:4px; padding:11px 13px; border-radius:12px; transition:.15s}
+  .assign .aicon{font-size:17px; line-height:1}
+  .assign label{font-size:13px; font-weight:800; white-space:nowrap; letter-spacing:.3px}
+  .assign select{flex:1; font-weight:700; font-size:14.5px; border-width:1.5px; background:#fff}
+  .assign.unset{background:#fff4e2; border:1.5px solid #f0ad3c; box-shadow:0 2px 10px rgba(240,173,60,.18)}
+  .assign.unset label{color:#b26a09}
+  .assign.unset select{border-color:#f0ad3c; color:#b26a09}
+  .assign.set{background:#e9f1ff; border:1.5px solid #6a9bea}
+  .assign.set label{color:#2f6bd0}
+  .assign.set select{border-color:#6a9bea; color:#2f6bd0}
 
   details.note{border-top:1px dashed var(--line); padding-top:10px}
   details.note summary{font-size:13px; font-weight:600; cursor:pointer; color:var(--ink)}
@@ -190,7 +197,7 @@
   const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
   let rows = [];
   let filter = "전체";
-  let statusFilter = "전체";
+  let statusFilter = "대기";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
   let pendingDelete = null;
@@ -341,7 +348,8 @@
         <div class="memo transresult" style="display:none"></div>
       </div>`:""}
 
-      <div class="assign">
+      <div class="assign ${r.assigned_designer?'set':'unset'}">
+        <span class="aicon">${r.assigned_designer?'✓':'👤'}</span>
         <label>담당 디자이너</label>
         <select class="assignSel">${opt(DESIGNERS, r.assigned_designer)}</select>
       </div>
