@@ -188,10 +188,13 @@
     const saved = loadCreds();
     if(saved && saved.id){
       $("email").value = saved.id; $("password").value = saved.pw || ""; $("remember").checked = true;
-      const { error } = await doLogin(saved.id, saved.pw);
-      if(!error){ showApp(); return; }
-      clearCreds();
+      if(!loggedOut()){
+        const { error } = await doLogin(saved.id, saved.pw);
+        if(!error){ showApp(); return; }
+        clearCreds();
+      }
     }
+    clearLogoutFlag();   // 플래그 1회 소비 (이후엔 다시 자동로그인 허용)
     showLogin();
   }
   function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
@@ -202,9 +205,13 @@
 
   // 로그인 정보 저장 (이 기기에만, 가벼운 인코딩)
   const CRED_KEY = "leanon_admin_cred";
+  const LOGOUT_KEY = "leanon_hire_logout";   // 수동 로그아웃 표시 → 재실행 시 자동로그인 1회 건너뜀
   function saveCreds(id, pw){ try{ localStorage.setItem(CRED_KEY, btoa(unescape(encodeURIComponent(JSON.stringify({id,pw}))))); }catch(_){} }
   function loadCreds(){ try{ const s=localStorage.getItem(CRED_KEY); return s ? JSON.parse(decodeURIComponent(escape(atob(s)))) : null; }catch(_){ return null; } }
   function clearCreds(){ try{ localStorage.removeItem(CRED_KEY); }catch(_){} }
+  function setLogoutFlag(){ try{ localStorage.setItem(LOGOUT_KEY, "1"); }catch(_){} }
+  function clearLogoutFlag(){ try{ localStorage.removeItem(LOGOUT_KEY); }catch(_){} }
+  function loggedOut(){ try{ return localStorage.getItem(LOGOUT_KEY)==="1"; }catch(_){ return false; } }
   async function doLogin(id, pw){ return await sb.auth.signInWithPassword({ email:toEmail(id), password:pw }); }
 
   $("loginBtn").onclick = async () => {
@@ -213,10 +220,18 @@
     const { error } = await doLogin(id, pw);
     if(error){ $("loginErr").textContent="로그인 실패: 아이디/비밀번호를 확인해 주세요."; return; }
     if($("remember").checked) saveCreds(id, pw); else clearCreds();
+    clearLogoutFlag();   // 수동 로그인 → 다음 실행부터 자동로그인 허용
     showApp();
   };
   $("password").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
-  $("logoutBtn").onclick = async () => { clearCreds(); await sb.auth.signOut(); showLogin(); };
+  // 로그아웃: 세션만 끊고 저장된 id/pw는 유지 (다음 로그인 때 자동 입력). 재실행 시 자동로그인은 1회 건너뜀
+  $("logoutBtn").onclick = async () => {
+    setLogoutFlag();
+    await sb.auth.signOut();
+    const saved = loadCreds();
+    if(saved && saved.id){ $("email").value = saved.id; $("password").value = saved.pw || ""; $("remember").checked = true; }
+    showLogin();
+  };
   $("refreshBtn").onclick = () => load();
 
   /* ── 상태 필터 ── */
