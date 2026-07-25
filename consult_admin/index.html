@@ -126,11 +126,12 @@
   .viewtoggle .vbtn.active{background:var(--ink); color:#fff}
 
   /* 대시보드 */
-  #dashView{display:none; padding:20px 18px 60px; max-width:640px}
+  #dashView{display:none; padding:20px 18px 60px; max-width:1280px}
+  .dash-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px 36px; margin-top:22px}
   .dash-head{display:flex; align-items:baseline; gap:8px}
   .dash-total{font-size:30px; font-weight:800; font-variant-numeric:tabular-nums}
   .dash-sub{color:var(--muted); font-size:13px}
-  .dash-list{margin-top:20px; display:flex; flex-direction:column; gap:13px}
+  .dash-list{margin-top:6px; display:flex; flex-direction:column; gap:13px}
   .dash-row{display:grid; grid-template-columns:76px 1fr 40px; align-items:center; gap:12px}
   .dash-name{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .dash-name.muted{color:var(--muted); font-weight:600}
@@ -141,7 +142,7 @@
   .dash-empty{color:var(--muted); padding:60px 20px; text-align:center; font-size:15px}
 
   /* 대시보드: 추가 시술 의향 분포 */
-  .dash-section{margin-top:36px}
+  .dash-section{margin-top:0; min-width:0}
   .dash-sectitle{font-size:14px; font-weight:800; display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px}
   .dash-legend{display:flex; align-items:center; gap:12px; font-size:11.5px; font-weight:600; color:var(--muted)}
   .dash-legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:4px; vertical-align:-1px}
@@ -222,27 +223,32 @@
       <span class="dash-total" id="dashTotal">0</span>
       <span class="dash-sub" id="dashSub">건</span>
     </div>
-    <div class="dash-list" id="dashList"></div>
-
-    <div class="dash-section">
-      <div class="dash-sectitle">추가 시술 의향
-        <span class="dash-legend">
-          <span><i class="lg more"></i>추가 희망</span>
-          <span><i class="lg only"></i>예약만</span>
-          <span><i class="lg none"></i>무응답</span>
-        </span>
+    <div class="dash-grid">
+      <div class="dash-section">
+        <div class="dash-sectitle">디자이너별 상담 수</div>
+        <div class="dash-list" id="dashList"></div>
       </div>
-      <div class="dash-list" id="dashUpsell"></div>
-    </div>
 
-    <div class="dash-section">
-      <div class="dash-sectitle">추구 이미지 <span class="dash-legend">최대 2개 선택 · 상담별 중복 집계</span></div>
-      <div class="dash-list freq" id="dashImage"></div>
-    </div>
+      <div class="dash-section">
+        <div class="dash-sectitle">추가 시술 의향
+          <span class="dash-legend">
+            <span><i class="lg more"></i>추가 희망</span>
+            <span><i class="lg only"></i>예약만</span>
+            <span><i class="lg none"></i>무응답</span>
+          </span>
+        </div>
+        <div class="dash-list" id="dashUpsell"></div>
+      </div>
 
-    <div class="dash-section">
-      <div class="dash-sectitle">고민 · 보완하고 싶은 점 <span class="dash-legend">복수 선택 가능</span></div>
-      <div class="dash-list freq" id="dashConcern"></div>
+      <div class="dash-section">
+        <div class="dash-sectitle">추구 이미지 <span class="dash-legend">최대 2개 선택 · 상담별 중복 집계</span></div>
+        <div class="dash-list freq" id="dashImage"></div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sectitle">고민 · 보완하고 싶은 점 <span class="dash-legend">복수 선택 가능</span></div>
+        <div class="dash-list freq" id="dashConcern"></div>
+      </div>
     </div>
   </div>
 </div>
