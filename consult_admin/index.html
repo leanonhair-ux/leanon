@@ -398,7 +398,8 @@
     viewMode = v;
     document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.classList.toggle("active", b.dataset.v===v));
     const dash = v==="dash";
-    ["filters","statusbar","count","grid"].forEach(id => $(id).style.display = dash ? "none" : "");
+    // 디자이너 필터(#filters)는 대시보드에서도 사용 → 숨기지 않음. 상태 필터는 목록 전용
+    ["statusbar","count","grid"].forEach(id => $(id).style.display = dash ? "none" : "");
     $("dashView").style.display = dash ? "block" : "none";
     render();
   }
@@ -445,7 +446,9 @@
 
   /* ── 대시보드: 기간별 디자이너별 상담 수 + 추가시술 의향 분포 ── */
   function renderDash(){
-    const list = rows.filter(inPeriod);
+    // 디자이너 필터(전체=기본) 적용 → 선택 시 그 디자이너 상담만 집계
+    const base = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
+    const list = base.filter(inPeriod);
     // 디자이너별 집계 (건수 + 오늘 시술 의향). today 저장값은 언어 무관 한국어 → 부분일치로 분류
     const stat = new Map();   // name -> {n, more, only}
     DESIGNERS.forEach(d => stat.set(d, {n:0, more:0, only:0}));
@@ -460,8 +463,9 @@
       else if(t.includes("예약")) s.only++;
     });
 
-    // 1) 건수 분포
+    // 1) 건수 분포 (전체일 땐 0건 디자이너도 표시, 특정 디자이너 선택 시 그 사람만)
     let entries = [...stat.entries()].map(([name,s]) => ({name, n:s.n, muted:false}));
+    if(filter!=="전체") entries = entries.filter(e => e.n>0);
     entries.sort((a,b) => b.n - a.n || a.name.localeCompare(b.name,'ko'));
     if(unassigned>0) entries.push({name:"미배정", n:unassigned, muted:true});
     const total = list.length;
