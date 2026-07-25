@@ -65,6 +65,17 @@
   .done h2{font-size:22px; margin-bottom:12px}
   .done p{color:var(--muted); font-size:15px; line-height:1.7}
   .footer-tag{text-align:center; margin-top:40px; color:var(--muted); font-size:12px; letter-spacing:.5px}
+
+  /* 사진 첨부 */
+  .photobtn{display:inline-flex; align-items:center; gap:7px; border:1px dashed var(--line); background:#faf8f5;
+            border-radius:12px; padding:12px 16px; font-size:14px; font-family:inherit; color:var(--ink); cursor:pointer}
+  .photobtn:disabled{opacity:.4; cursor:default}
+  .photos{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px}
+  .photo{position:relative; width:84px; height:84px; border-radius:10px; overflow:hidden; border:1px solid var(--line)}
+  .photo img{width:100%; height:100%; object-fit:cover; display:block}
+  .photo .rm{position:absolute; top:3px; right:3px; width:22px; height:22px; border:none; border-radius:999px;
+             background:rgba(0,0,0,.6); color:#fff; font-size:13px; line-height:1; cursor:pointer;
+             display:flex; align-items:center; justify-content:center}
 </style>
 </head>
 <body>
@@ -134,6 +145,12 @@
           <label class="chip"><input type="radio" name="reference" value="사진 있어요"><span data-i18n="ref_photo">사진 있어요</span></label>
           <label class="chip"><input type="radio" name="reference" value="추천 받고 싶어요"><span data-i18n="ref_rec">추천 받고 싶어요</span></label>
         </div>
+      </div>
+      <div class="field" id="photoField" style="display:none">
+        <label class="q"><span data-i18n="photo_label">사진 첨부</span> <span class="hint" data-i18n="photo_hint">최대 3장</span></label>
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none" />
+        <button type="button" class="photobtn" id="photoBtn">📷 <span data-i18n="photo_btn">사진 선택</span></button>
+        <div class="photos" id="photoPreview"></div>
       </div>
       <div class="field">
         <label class="q"><span data-i18n="today_label">오늘 시술 진행</span> <span class="hint" data-i18n="today_hint">*시술시간이 오래 소요될 수 있습니다</span></label>
@@ -228,6 +245,7 @@
       checklist_hint:"마지막 시술 시기", cut_label:"컷 (Cut)", perm_label:"펌 (Perm)", color_label:"컬러 (Color)", months_ago:"개월 전",
       color_bleach:"탈색", color_tonedown:"톤다운", color_black:"블랙",
       ref_label:"디자인 레퍼런스", ref_photo:"사진 있어요", ref_rec:"추천 받고 싶어요",
+      photo_label:"사진 첨부", photo_hint:"최대 3장", photo_btn:"사진 선택", photo_max:"사진은 최대 3장까지 첨부할 수 있어요.", photo_error:"사진 업로드에 실패했어요. 잠시 후 다시 시도하거나 사진을 빼고 제출해 주세요.",
       today_label:"오늘 시술 진행", today_hint:"*시술시간이 오래 소요될 수 있습니다", today_reserved:"예약한 시술만 원해요", today_more:"추가 시술 필요하면 원해요",
       length_label:"선호하는 기장감", len_short:"숏", len_bob:"단발", len_mediumbob:"중단발", len_medium:"미디움", len_long:"롱", len_any:"상관없어요",
       image_label:"추구하는 이미지", image_hint:"최대 2개",
@@ -245,6 +263,7 @@
       checklist_hint:"Last treatment", cut_label:"Cut", perm_label:"Perm", color_label:"Color", months_ago:"months ago",
       color_bleach:"Bleach", color_tonedown:"Tone Down", color_black:"Black",
       ref_label:"Design Reference", ref_photo:"I have a photo", ref_rec:"I want a recommendation",
+      photo_label:"Attach Photos", photo_hint:"Up to 3", photo_btn:"Choose Photos", photo_max:"You can attach up to 3 photos.", photo_error:"Photo upload failed. Please try again, or submit without photos.",
       today_label:"Today's Procedure", today_hint:"*The procedure may take a while", today_reserved:"Only the reserved procedure", today_more:"Open to more if needed",
       length_label:"Preferred Length", len_short:"Short", len_bob:"Bob", len_mediumbob:"Medium Bob", len_medium:"Medium", len_long:"Long", len_any:"Doesn't matter",
       image_label:"Desired Image", image_hint:"Max 2",
@@ -262,6 +281,7 @@
       checklist_hint:"上次造型时间", cut_label:"剪发 (Cut)", perm_label:"烫发 (Perm)", color_label:"染发 (Color)", months_ago:"个月前",
       color_bleach:"漂发", color_tonedown:"调暗", color_black:"黑色",
       ref_label:"设计参考", ref_photo:"我有照片", ref_rec:"想听推荐",
+      photo_label:"上传照片", photo_hint:"最多3张", photo_btn:"选择照片", photo_max:"最多只能上传3张照片。", photo_error:"照片上传失败，请稍后重试或不带照片提交。",
       today_label:"今日施术", today_hint:"*施术时间可能较长", today_reserved:"只做预约的项目", today_more:"需要的话可加项目",
       length_label:"偏好长度", len_short:"短发", len_bob:"波波头", len_mediumbob:"中长波波", len_medium:"中长发", len_long:"长发", len_any:"都可以",
       image_label:"期望形象", image_hint:"最多2个",
@@ -279,6 +299,7 @@
       checklist_hint:"前回の施術時期", cut_label:"カット (Cut)", perm_label:"パーマ (Perm)", color_label:"カラー (Color)", months_ago:"ヶ月前",
       color_bleach:"ブリーチ", color_tonedown:"トーンダウン", color_black:"ブラック",
       ref_label:"デザイン参考", ref_photo:"写真があります", ref_rec:"おすすめ希望",
+      photo_label:"写真添付", photo_hint:"最大3枚", photo_btn:"写真を選択", photo_max:"写真は最大3枚まで添付できます。", photo_error:"写真のアップロードに失敗しました。時間をおいて再試行するか、写真なしで送信してください。",
       today_label:"本日の施術", today_hint:"*施術時間が長くなる場合があります", today_reserved:"予約した施術のみ", today_more:"必要なら追加も希望",
       length_label:"好みの長さ", len_short:"ショート", len_bob:"ボブ", len_mediumbob:"ミディアムボブ", len_medium:"ミディアム", len_long:"ロング", len_any:"どちらでも",
       image_label:"目指すイメージ", image_hint:"最大2つ",
@@ -330,6 +351,76 @@
   });
   const BIRTH_RE = /^(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12]\d|3[01])$/;
 
+  // 사진 첨부: "사진 있어요" 선택 시 노출, 최대 3장, Supabase Storage(비공개 버킷)에 업로드
+  const PHOTO_BUCKET = "consult-photos";
+  const photoField = document.getElementById('photoField');
+  const photoInput = document.getElementById('photoInput');
+  const photoBtn = document.getElementById('photoBtn');
+  const photoPreview = document.getElementById('photoPreview');
+  let photoFiles = [];
+
+  function refHasPhoto(){ const el = document.querySelector('input[name="reference"]:checked'); return !!el && el.value === "사진 있어요"; }
+  function syncPhotoField(){
+    if(refHasPhoto()){ photoField.style.display = ""; }
+    else { photoField.style.display = "none"; photoFiles = []; renderPhotos(); }
+  }
+  document.querySelectorAll('input[name="reference"]').forEach(el => el.addEventListener('change', syncPhotoField));
+
+  photoBtn.addEventListener('click', () => photoInput.click());
+  photoInput.addEventListener('change', () => {
+    for(const f of photoInput.files){
+      if(photoFiles.length >= 3){ alert(T[lang].photo_max); break; }
+      if(f.type.startsWith('image/')) photoFiles.push(f);
+    }
+    photoInput.value = "";
+    renderPhotos();
+  });
+  function renderPhotos(){
+    photoPreview.innerHTML = "";
+    photoFiles.forEach((f, i) => {
+      const url = URL.createObjectURL(f);
+      const div = document.createElement('div');
+      div.className = "photo";
+      div.innerHTML = '<img src="'+url+'" alt="" /><button type="button" class="rm" aria-label="remove">✕</button>';
+      div.querySelector('.rm').onclick = () => { photoFiles.splice(i,1); renderPhotos(); };
+      photoPreview.appendChild(div);
+    });
+    photoBtn.disabled = photoFiles.length >= 3;
+  }
+  function uuid(){ return (self.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2)); }
+  // 업로드 전 리사이즈/압축 (긴 변 1600px, JPEG 82%) → 장당 수백 KB로 축소
+  function resizeImage(file, maxDim, quality){
+    return new Promise((resolve, reject) => {
+      const img = new Image(); const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w >= h){ h = Math.round(h*maxDim/w); w = maxDim; } else { w = Math.round(w*maxDim/h); h = maxDim; }
+        }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('convert failed')), 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('load failed')); };
+      img.src = url;
+    });
+  }
+  async function uploadPhotos(){
+    if(!photoFiles.length || !sb) return null;
+    const now = new Date();
+    const dir = now.getFullYear() + "/" + String(now.getMonth()+1).padStart(2,'0');
+    const paths = [];
+    for(const f of photoFiles){
+      const blob = await resizeImage(f, 1600, 0.82);
+      const path = dir + "/" + uuid() + ".jpg";
+      const { error } = await sb.storage.from(PHOTO_BUCKET).upload(path, blob, { contentType:'image/jpeg', upsert:false });
+      if(error) throw new Error(error.message);
+      paths.push(path);
+    }
+    return paths;
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     // 생년월일 입력했으면 형식 강제 (미입력은 허용)
@@ -355,6 +446,11 @@
     };
     try {
       if (sb) {
+        // 사진 먼저 업로드 (실패 시 상담 저장 막고 재시도 안내 — 사진 유실 방지)
+        let photoPaths = null;
+        try { photoPaths = await uploadPhotos(); }
+        catch (up) { alert(T[lang].photo_error); btn.disabled = false; btn.textContent = T[lang].submit_btn; return; }
+        if (photoPaths && photoPaths.length) payload.photos = photoPaths;
         const { error } = await sb.from('consultations').insert(payload);
         if (error) throw new Error(error.message);
       } else {

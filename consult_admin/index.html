@@ -71,6 +71,10 @@
   .kv .k{color:var(--muted); display:inline-block; min-width:96px}
   .tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px}
   .tag{font-size:12px; background:#fff; border:1px solid var(--line); border-radius:6px; padding:3px 8px}
+  .cphotos{display:flex; flex-wrap:wrap; gap:8px; margin-top:5px}
+  .cphotos a{display:block; width:78px; height:78px; border-radius:8px; overflow:hidden; border:1px solid var(--line)}
+  .cphotos img{width:100%; height:100%; object-fit:cover; display:block}
+  .cphotos .ph-msg{font-size:12.5px; color:var(--muted)}
   .memo{font-size:13px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px; white-space:pre-wrap}
   .pasthead{display:flex; align-items:center; gap:8px}
   .transbtn{border:1px solid var(--line); background:#fff; border-radius:6px; padding:3px 9px;
@@ -278,6 +282,7 @@
   // 상담지 체크박스 옵션 (저장값은 언어 무관 한국어) — 대시보드 빈도 분포용
   const IMAGE_OPTS   = ["사랑스러운","여성스러운","모던/고급","힙/트렌디","영/캐주얼","개성/유니크","시크/전문적인","중성적인"];
   const CONCERN_OPTS = ["턱","광대","얼굴 길이","목 길이","두상","모질","모르겠어요"];
+  const PHOTO_BUCKET = "consult-photos";   // 상담 첨부 사진 (비공개 Storage 버킷)
 
   const FACE = ["하트형","땅콩형","육각형","둥근형","마름모형","사각형","긴얼굴형","계란형"];
   const NECK = ["짧은 편","긴 편","얇은 편","두꺼운 편","승모근이 높은 편","적당한 편"];
@@ -626,6 +631,7 @@
         <div><span class="k">오늘 시술</span> ${esc(r.today)||"-"}</div>
         <div><span class="k">기장감</span> ${esc(r.length)||"-"}</div>
       </div>
+      ${asArr(r.photos).length?`<div><div class="cmeta">첨부 사진</div><div class="cphotos" data-ph="${r.id}"><span class="ph-msg">📷 ${asArr(r.photos).length}장 불러오는 중…</span></div></div>`:""}
       <div><div class="cmeta">추구 이미지</div><div class="tags">${arr(r.image)}</div></div>
       <div><div class="cmeta">고민/보완</div><div class="tags">${arr(r.concern)}</div></div>
       <div><div class="cmeta">평소 스타일링</div><div class="tags">${arr(r.styling)}</div></div>
@@ -674,10 +680,23 @@
     return ctx;
   }
 
+  // 첨부 사진: 비공개 버킷 경로 → 서명URL 생성 후 썸네일 표시 (클릭 시 원본 새 탭)
+  async function loadPhotos(card, r){
+    const box = card.querySelector(".cphotos"); if(!box) return;
+    const paths = asArr(r.photos);
+    if(!paths.length){ box.remove(); return; }
+    const { data, error } = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(paths, 3600);
+    if(error || !data){ box.innerHTML = '<span class="ph-msg">사진을 불러오지 못했어요.</span>'; return; }
+    const html = data.map(d => d.signedUrl
+      ? `<a href="${d.signedUrl}" target="_blank" rel="noopener"><img src="${d.signedUrl}" alt="상담 사진" loading="lazy"></a>` : "").join("");
+    box.innerHTML = html || '<span class="ph-msg">사진을 불러오지 못했어요.</span>';
+  }
+
   function bind(r){
     const card = $("grid").querySelector(`.card[data-id="${r.id}"]`);
     if(!card) return;
     const n = r.designer_note || {};
+    if(asArr(r.photos).length) loadPhotos(card, r);
 
     // 필기 캔버스
     const pad = card.querySelector(".drawpad");
