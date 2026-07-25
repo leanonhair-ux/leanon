@@ -241,6 +241,11 @@
       </div>
 
       <div class="dash-section">
+        <div class="dash-sectitle">연령대</div>
+        <div class="dash-list" id="dashAge"></div>
+      </div>
+
+      <div class="dash-section">
         <div class="dash-sectitle">추구 이미지 <span class="dash-legend">최대 2개 선택 · 상담별 중복 집계</span></div>
         <div class="dash-list freq" id="dashImage"></div>
       </div>
@@ -465,7 +470,7 @@
     $("dashSub").textContent = `건 · ${periodLabel()}`;
     if(!total){
       $("dashList").innerHTML = `<div class="dash-empty">해당 기간에 작성된 상담이 없어요.</div>`;
-      ["dashUpsell","dashImage","dashConcern"].forEach(id => $(id).innerHTML = "");
+      ["dashUpsell","dashAge","dashImage","dashConcern"].forEach(id => $(id).innerHTML = "");
       return;
     }
     $("dashList").innerHTML = entries.map(e => `
@@ -475,7 +480,8 @@
         <div class="dash-num">${e.n}</div>
       </div>`).join("");
 
-    // 1-2) 추구 이미지 / 고민 빈도 분포 (전체, 복수선택 중복 집계)
+    // 1-2) 연령대 / 추구 이미지 / 고민 빈도 분포 (전체)
+    renderAge("dashAge", list, total);
     renderFreq("dashImage", list, "image", IMAGE_OPTS, total);
     renderFreq("dashConcern", list, "concern", CONCERN_OPTS, total);
 
@@ -514,6 +520,47 @@
       return v.split(",").map(s=>s.trim()).filter(Boolean);
     }
     return [];
+  }
+  // 생년월일 자유텍스트에서 출생연도 추출 (1996.03.21 / 1996-3-21 / 960321 / 96.03.21 등)
+  function birthYear(v){
+    if(v==null) return null;
+    const s = String(v).trim();
+    let m = s.match(/(19\d{2}|20\d{2})/);          // 4자리 연도 우선
+    if(m) return parseInt(m[1],10);
+    const nowYY = new Date().getFullYear() % 100;
+    m = s.match(/^(\d{2})(?:[.\-\/]|\d{4}$)/);       // 2자리 연도 (YY.MM.DD / YYMMDD)
+    if(m){ const yy=parseInt(m[1],10); return yy<=nowYY ? 2000+yy : 1900+yy; }
+    return null;
+  }
+  function ageGroup(birth, nowY){
+    const y = birthYear(birth);
+    if(!y) return "미상";
+    const age = nowY - y;
+    if(age < 0 || age > 120) return "미상";
+    if(age < 20) return "10대";
+    if(age < 30) return "20대";
+    if(age < 40) return "30대";
+    if(age < 50) return "40대";
+    return "50대+";
+  }
+  // 연령대 분포 (연령 오름차순 고정 순서)
+  function renderAge(containerId, list, total){
+    const order = ["10대","20대","30대","40대","50대+","미상"];
+    const cnt = new Map(order.map(b => [b, 0]));
+    const nowY = new Date().getFullYear();
+    list.forEach(r => { const g = ageGroup(r.birth, nowY); cnt.set(g, cnt.get(g)+1); });
+    let entries = order.map(b => ({name:b, n:cnt.get(b)})).filter(e => !(e.name==="미상" && e.n===0));
+    const max = Math.max(1, ...entries.map(e => e.n));
+    if(!entries.some(e => e.n>0)){ $(containerId).innerHTML = `<div class="dash-empty">응답 데이터가 없어요.</div>`; return; }
+    $(containerId).innerHTML = entries.map(e => {
+      const m = e.name==="미상" ? "muted" : "";
+      return `
+      <div class="dash-row">
+        <div class="dash-name ${m}">${esc(e.name)}</div>
+        <div class="dash-bar" title="${e.n}건 · 상담의 ${total?Math.round(e.n/total*100):0}%"><div class="dash-fill ${m}" style="width:${(e.n/max*100).toFixed(1)}%"></div></div>
+        <div class="dash-num">${e.n}</div>
+      </div>`;
+    }).join("");
   }
   // 체크박스 항목 빈도 분포 (복수선택이라 상담별 중복 집계)
   function renderFreq(containerId, list, field, options, total){
