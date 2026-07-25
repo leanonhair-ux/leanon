@@ -371,8 +371,6 @@
         <textarea class="memo-in" placeholder="면접 일정 / 평가 메모 등">${esc(r.memo)}</textarea>
         <button class="savebtn">메모 저장</button>
       </details>
-
-      <div class="cardfoot"><button class="delbtn">🗑 삭제</button></div>
     </div>`;
   }
 
@@ -394,7 +392,6 @@
       if(error) return alert("저장 오류: "+error.message);
       r.memo=memo;
     };
-    card.querySelector(".delbtn").onclick = () => openDelModal(r);
   }
 
   init();

@@ -393,8 +393,6 @@
         <div class="draw-tools"><button type="button" class="clearpad">전체 지우기</button></div>
         <button class="savebtn">저장 (상담완료 처리)</button>
       </details>
-
-      <div class="cardfoot"><button class="delbtn">🗑 삭제</button></div>
     </div>`;
   }
 
@@ -467,9 +465,6 @@
         }
       };
     }
-
-    // 삭제 (모달)
-    card.querySelector(".delbtn").onclick = () => openDelModal(r);
   }
 
   init();
