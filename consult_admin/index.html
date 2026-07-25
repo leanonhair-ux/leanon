@@ -119,11 +119,33 @@
   .mbtn.danger{background:#c0392b; color:#fff}
   .mbtn:disabled{opacity:.5}
 
+  /* 뷰 전환 토글 (목록 / 대시보드) */
+  .viewtoggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .viewtoggle .vbtn{border:none; border-radius:0; background:#fff; padding:8px 13px; font-size:13px; cursor:pointer; font-family:inherit; color:var(--ink)}
+  .viewtoggle .vbtn+.vbtn{border-left:1px solid var(--line)}
+  .viewtoggle .vbtn.active{background:var(--ink); color:#fff}
+
+  /* 대시보드 */
+  #dashView{display:none; padding:20px 18px 60px; max-width:640px}
+  .dash-head{display:flex; align-items:baseline; gap:8px}
+  .dash-total{font-size:30px; font-weight:800; font-variant-numeric:tabular-nums}
+  .dash-sub{color:var(--muted); font-size:13px}
+  .dash-list{margin-top:20px; display:flex; flex-direction:column; gap:13px}
+  .dash-row{display:grid; grid-template-columns:76px 1fr 40px; align-items:center; gap:12px}
+  .dash-name{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .dash-name.muted{color:var(--muted); font-weight:600}
+  .dash-bar{height:26px; background:#efe9e0; border-radius:8px; overflow:hidden}
+  .dash-fill{height:100%; background:var(--ink); border-radius:8px; min-width:2px; transition:width .3s}
+  .dash-fill.muted{background:#c9c1b4}
+  .dash-num{font-size:15px; font-weight:800; text-align:right; font-variant-numeric:tabular-nums}
+  .dash-empty{color:var(--muted); padding:60px 20px; text-align:center; font-size:15px}
+
   /* 모바일 최적화 */
   @media (max-width:600px){
     .topbar{padding:12px 14px; gap:8px}
     .topbar .sub{display:none}
     .topbar button{padding:7px 10px; font-size:12.5px}
+    .viewtoggle .vbtn{padding:7px 10px; font-size:12px}
     .filters{padding:12px 14px 4px}
     .filterbar{padding:6px 14px 2px}
     .count{padding:8px 14px 0}
@@ -152,6 +174,10 @@
     <img class="toplogo" src="../logo.png" alt="LEANON" onerror="this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'" />
     <span class="sub">상담 관리</span>
     <span class="spacer"></span>
+    <div class="viewtoggle">
+      <button class="vbtn active" data-v="list">목록</button>
+      <button class="vbtn" data-v="dash">대시보드</button>
+    </div>
     <button id="refreshBtn">새로고침</button>
     <button id="logoutBtn">로그아웃</button>
   </div>
@@ -173,6 +199,15 @@
   </div>
   <div class="count" id="count"></div>
   <div class="grid" id="grid"></div>
+
+  <!-- 대시보드: 기간별 디자이너별 상담 수 -->
+  <div id="dashView">
+    <div class="dash-head">
+      <span class="dash-total" id="dashTotal">0</span>
+      <span class="dash-sub" id="dashSub">건</span>
+    </div>
+    <div class="dash-list" id="dashList"></div>
+  </div>
 </div>
 
 <!-- 삭제 확인 모달 -->
@@ -203,6 +238,7 @@
   let statusFilter = "대기";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
+  let viewMode = "list";   // "list" | "dash"
   let pendingDelete = null;
 
   const $ = id => document.getElementById(id);
@@ -300,6 +336,22 @@
     if(toDate && t > new Date(toDate+"T23:59:59.999")) return false;
     return true;
   }
+  function periodLabel(){
+    if(!fromDate && !toDate) return "전체기간";
+    if(fromDate && toDate && fromDate===toDate) return fromDate;
+    return `${fromDate||"처음"} ~ ${toDate||"오늘"}`;
+  }
+
+  /* ── 뷰 전환 (목록 / 대시보드) ── */
+  function setView(v){
+    viewMode = v;
+    document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.classList.toggle("active", b.dataset.v===v));
+    const dash = v==="dash";
+    ["filters","statusbar","count","grid"].forEach(id => $(id).style.display = dash ? "none" : "");
+    $("dashView").style.display = dash ? "block" : "none";
+    render();
+  }
+  document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.onclick = () => setView(b.dataset.v));
 
   /* ── 삭제 모달 ── */
   function openDelModal(r){
@@ -330,6 +382,7 @@
 
   /* ── 렌더 ── */
   function render(){
+    if(viewMode==="dash"){ renderDash(); return; }
     let list = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
     list = list.filter(inPeriod);
@@ -337,6 +390,34 @@
     if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 상담이 없어요.</div>`; return; }
     $("grid").innerHTML = list.map(cardHTML).join("");
     list.forEach(bind);
+  }
+
+  /* ── 대시보드: 기간별 디자이너별 상담 수 ── */
+  function renderDash(){
+    const list = rows.filter(inPeriod);
+    const counts = new Map();
+    DESIGNERS.forEach(d => counts.set(d, 0));   // 0건 디자이너도 표시
+    let unassigned = 0;
+    list.forEach(r => {
+      const d = r.assigned_designer;
+      if(!d){ unassigned++; return; }
+      counts.set(d, (counts.get(d)||0) + 1);
+    });
+    let entries = [...counts.entries()].map(([name,n]) => ({name, n, muted:false}));
+    entries.sort((a,b) => b.n - a.n || a.name.localeCompare(b.name,'ko'));
+    if(unassigned>0) entries.push({name:"미배정", n:unassigned, muted:true});
+
+    const total = list.length;
+    const max = Math.max(1, ...entries.map(e => e.n));
+    $("dashTotal").textContent = total;
+    $("dashSub").textContent = `건 · ${periodLabel()}`;
+    if(!total){ $("dashList").innerHTML = `<div class="dash-empty">해당 기간에 작성된 상담이 없어요.</div>`; return; }
+    $("dashList").innerHTML = entries.map(e => `
+      <div class="dash-row">
+        <div class="dash-name ${e.muted?'muted':''}">${esc(e.name)}</div>
+        <div class="dash-bar"><div class="dash-fill ${e.muted?'muted':''}" style="width:${(e.n/max*100).toFixed(1)}%"></div></div>
+        <div class="dash-num">${e.n}</div>
+      </div>`).join("");
   }
 
   function arr(a){ return Array.isArray(a)&&a.length ? a.map(x=>`<span class="tag">${esc(x)}</span>`).join("") : '<span class="cmeta">-</span>'; }
