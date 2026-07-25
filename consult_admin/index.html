@@ -205,6 +205,12 @@
   let fromDate = null, toDate = null;
   let pendingDelete = null;
 
+  /* ── UI 전용 숨김 목록 (DB는 건드리지 않음, 이 기기에만 저장) ── */
+  const HIDDEN_KEY = "leanon_consult_hidden";
+  function loadHidden(){ try{ return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY)||"[]")); }catch(_){ return new Set(); } }
+  function saveHidden(set){ try{ localStorage.setItem(HIDDEN_KEY, JSON.stringify([...set])); }catch(_){} }
+  let hidden = loadHidden();
+
   const $ = id => document.getElementById(id);
   const esc = s => (s==null?"":String(s)).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   const pad = n => String(n).padStart(2,'0');
@@ -311,12 +317,10 @@
   function closeDelModal(){ $("delModal").classList.remove("open"); pendingDelete = null; }
   $("delCancel").onclick = closeDelModal;
   $("delModal").onclick = e => { if(e.target===$("delModal")) closeDelModal(); };
-  $("delConfirm").onclick = async () => {
+  $("delConfirm").onclick = () => {
     const r = pendingDelete; if(!r) return;
-    $("delConfirm").disabled = true; $("delConfirm").textContent = "삭제 중...";
-    const { error } = await sb.from("consultations").delete().eq("id", r.id);
-    if(error){ alert("삭제 오류: "+error.message); $("delConfirm").disabled=false; $("delConfirm").textContent="삭제"; return; }
-    rows = rows.filter(x => x.id !== r.id);
+    // 실제 데이터는 삭제하지 않고 화면에서만 숨김 (DB 원본 보존)
+    hidden.add(r.id); saveHidden(hidden);
     closeDelModal(); render();
   };
 
@@ -331,6 +335,7 @@
   /* ── 렌더 ── */
   function render(){
     let list = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
+    list = list.filter(r => !hidden.has(r.id));   // 숨긴 항목 제외 (DB엔 그대로 있음)
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
     list = list.filter(inPeriod);
     $("count").textContent = `${list.length}건`;
