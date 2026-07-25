@@ -94,7 +94,7 @@
       </div>
       <div class="field">
         <label class="q" for="birth" data-i18n="birth_label">생년월일</label>
-        <input class="in" id="birth" name="birth" type="text" inputmode="numeric" data-i18n-ph="birth_ph" placeholder="예) 1996.03.21" />
+        <input class="in" id="birth" name="birth" type="text" inputmode="numeric" maxlength="10" data-i18n-ph="birth_ph" placeholder="예) 1996.03.21" />
       </div>
       <div class="field">
         <label class="q" data-i18n="region_label">거주 지역</label>
@@ -223,7 +223,7 @@
   const T = {
     ko: {
       subtitle:"원활한 시술을 위해 고객님의 의견을 작성 부탁드립니다.",
-      name_label:"고객 성명", birth_label:"생년월일", birth_ph:"예) 1996.03.21",
+      name_label:"고객 성명", birth_label:"생년월일", birth_ph:"예) 1996.03.21", birth_invalid:"생년월일을 YYYY.MM.DD 형식으로 입력해 주세요. (예: 1996.03.21)",
       region_label:"거주 지역", region_si_ph:"시 (예: 서울)", region_gu_ph:"구 (예: 성동구)",
       checklist_hint:"마지막 시술 시기", cut_label:"컷 (Cut)", perm_label:"펌 (Perm)", color_label:"컬러 (Color)", months_ago:"개월 전",
       color_bleach:"탈색", color_tonedown:"톤다운", color_black:"블랙",
@@ -240,7 +240,7 @@
     },
     en: {
       subtitle:"Please share your input for a smooth procedure.",
-      name_label:"Name", birth_label:"Date of Birth", birth_ph:"e.g. 1996.03.21",
+      name_label:"Name", birth_label:"Date of Birth", birth_ph:"e.g. 1996.03.21", birth_invalid:"Please enter your date of birth as YYYY.MM.DD (e.g. 1996.03.21)",
       region_label:"Residential Area", region_si_ph:"City (e.g. Seoul)", region_gu_ph:"District (e.g. Seongdong)",
       checklist_hint:"Last treatment", cut_label:"Cut", perm_label:"Perm", color_label:"Color", months_ago:"months ago",
       color_bleach:"Bleach", color_tonedown:"Tone Down", color_black:"Black",
@@ -257,7 +257,7 @@
     },
     zh: {
       subtitle:"为了顺利完成造型，请填写您的意见。",
-      name_label:"姓名", birth_label:"出生日期", birth_ph:"例) 1996.03.21",
+      name_label:"姓名", birth_label:"出生日期", birth_ph:"例) 1996.03.21", birth_invalid:"请以 YYYY.MM.DD 格式输入出生日期（例：1996.03.21）",
       region_label:"居住地区", region_si_ph:"市 (例: 首尔)", region_gu_ph:"区 (例: 城东区)",
       checklist_hint:"上次造型时间", cut_label:"剪发 (Cut)", perm_label:"烫发 (Perm)", color_label:"染发 (Color)", months_ago:"个月前",
       color_bleach:"漂发", color_tonedown:"调暗", color_black:"黑色",
@@ -274,7 +274,7 @@
     },
     ja: {
       subtitle:"スムーズな施術のため、ご意見をお書きください。",
-      name_label:"お名前", birth_label:"生年月日", birth_ph:"例) 1996.03.21",
+      name_label:"お名前", birth_label:"生年月日", birth_ph:"例) 1996.03.21", birth_invalid:"生年月日を YYYY.MM.DD 形式で入力してください（例：1996.03.21）",
       region_label:"お住まいの地域", region_si_ph:"市 (例: ソウル)", region_gu_ph:"区 (例: 城東区)",
       checklist_hint:"前回の施術時期", cut_label:"カット (Cut)", perm_label:"パーマ (Perm)", color_label:"カラー (Color)", months_ago:"ヶ月前",
       color_bleach:"ブリーチ", color_tonedown:"トーンダウン", color_black:"ブラック",
@@ -318,8 +318,27 @@
   const sb = SUPABASE_URL ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const form = document.getElementById('consultForm');
+
+  // 생년월일: 숫자만 입력하면 자동으로 YYYY.MM.DD 형식으로 (캘린더 없이 숫자만)
+  const birthEl = document.getElementById('birth');
+  birthEl.addEventListener('input', () => {
+    const d = birthEl.value.replace(/\D/g, '').slice(0, 8);
+    let out = d.slice(0, 4);
+    if (d.length > 4) out += '.' + d.slice(4, 6);
+    if (d.length > 6) out += '.' + d.slice(6, 8);
+    birthEl.value = out;
+  });
+  const BIRTH_RE = /^(19|20)\d{2}\.(0[1-9]|1[0-2])\.(0[1-9]|[12]\d|3[01])$/;
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    // 생년월일 입력했으면 형식 강제 (미입력은 허용)
+    const bv = birthEl.value.trim();
+    if (bv && !BIRTH_RE.test(bv)) {
+      alert(T[lang].birth_invalid);
+      birthEl.focus();
+      return;
+    }
     const btn = document.getElementById('submitBtn');
     btn.disabled = true; btn.textContent = T[lang].submitting;
     const fd = new FormData(form);
