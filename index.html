@@ -38,7 +38,7 @@
 
   /* POSTER SECTIONS */
   .poster{position:relative; min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
-  .poster img{width:100%; height:100%; object-fit:contain; position:absolute; inset:0; margin:auto}
+  .poster img{width:100%; height:100%; object-fit:cover; object-position:center 32%; position:absolute; inset:0; margin:auto}
   /* hero is a landscape photo — fill the viewport */
   .poster.hero img{object-fit:cover; object-position:center 42%}
   /* hero overlay */
@@ -112,14 +112,14 @@
 
 <!-- HERO -->
 <section class="poster hero" style="background:#eef0f1">
-  <img src="assets/hero/main.jpg" alt="LEANON" />
+  <img src="assets/hero/main.jpg" srcset="assets/hero/main-m.jpg 1400w, assets/hero/main.jpg 2000w" sizes="100vw" alt="LEANON" decoding="async" fetchpriority="high" />
   <div class="scrollcue">Scroll</div>
 </section>
 
 <!-- POSTER SCROLL -->
-<section class="poster" style="background:#f1efe9"><img src="assets/home/home-01.jpg" alt="LEANON — Curate your own vibe" /></section>
-<section class="poster" style="background:#f1f2f2"><img src="assets/home/home-02.jpg" alt="Curate your own vibe" /></section>
-<section class="poster" style="background:#f0f1f1"><img src="assets/home/home-03.jpg" alt="Curate your own vibe" /></section>
+<section class="poster" style="background:#f1efe9"><img src="assets/home/home-01.jpg" srcset="assets/home/home-01-m.jpg 1400w, assets/home/home-01.jpg 2000w" sizes="100vw" alt="LEANON — Curate your own vibe" loading="lazy" decoding="async" /></section>
+<section class="poster" style="background:#f1f2f2"><img src="assets/home/home-02.jpg" srcset="assets/home/home-02-m.jpg 1400w, assets/home/home-02.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
+<section class="poster" style="background:#f0f1f1"><img src="assets/home/home-03.jpg" srcset="assets/home/home-03-m.jpg 1400w, assets/home/home-03.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
 
 <!-- MENU -->
 <div class="paper">
