@@ -144,8 +144,8 @@
       <div class="field">
         <label class="q" data-i18n="ref_label">디자인 레퍼런스</label>
         <div class="opts">
-          <label class="chip"><input type="radio" name="reference" value="사진 있어요"><span data-i18n="ref_photo">사진 있어요</span></label>
-          <label class="chip"><input type="radio" name="reference" value="추천 받고 싶어요"><span data-i18n="ref_rec">추천 받고 싶어요</span></label>
+          <label class="chip"><input type="checkbox" name="reference" value="사진 있어요"><span data-i18n="ref_photo">사진 있어요</span></label>
+          <label class="chip"><input type="checkbox" name="reference" value="추천 받고 싶어요"><span data-i18n="ref_rec">추천 받고 싶어요</span></label>
         </div>
       </div>
       <div class="field" id="photoField" style="display:none">
@@ -371,7 +371,7 @@
   const photoPreview = document.getElementById('photoPreview');
   let photoFiles = [];
 
-  function refHasPhoto(){ const el = document.querySelector('input[name="reference"]:checked'); return !!el && el.value === "사진 있어요"; }
+  function refHasPhoto(){ const el = document.querySelector('input[name="reference"][value="사진 있어요"]'); return !!el && el.checked; }
   function syncPhotoField(){
     if(refHasPhoto()){ photoField.style.display = ""; }
     else { photoField.style.display = "none"; photoFiles = []; renderPhotos(); }
@@ -451,7 +451,7 @@
       last_cut: fd.get('last_cut') ? Number(fd.get('last_cut')) : null,
       last_perm: fd.get('last_perm') ? Number(fd.get('last_perm')) : null,
       last_color: fd.get('last_color') ? Number(fd.get('last_color')) : null,
-      color_type: fd.get('color_type'), reference: fd.get('reference'),
+      color_type: fd.get('color_type'), reference: fd.getAll('reference').join(', ') || null,
       today: fd.get('today'), length: fd.getAll('length').join(', ') || null,
       image: fd.getAll('image'), concern: fd.getAll('concern'), styling: fd.getAll('styling'),
       past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
