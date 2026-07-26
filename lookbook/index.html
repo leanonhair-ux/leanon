@@ -104,7 +104,7 @@
   // 연도별 룩북 이미지 (파일 추가 시 배열에만 넣으면 됨)
   const LOOKS = {
     "2026": Array.from({length:14}, (_,i) => `/assets/lookbook/2026/2026-${String(i+1).padStart(2,'0')}.jpg`),
-    "2025": []  // 2025 사진 준비되면 여기에 경로 추가
+    "2025": Array.from({length:27}, (_,i) => `/assets/lookbook/2025/2025-${String(i+1).padStart(2,'0')}.jpg`)
   };
 
   const galleryEl = document.getElementById('gallery');
