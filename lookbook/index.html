@@ -104,7 +104,9 @@
   // 연도별 룩북 이미지 (파일 추가 시 배열에만 넣으면 됨)
   const LOOKS = {
     "2026": Array.from({length:14}, (_,i) => `/assets/lookbook/2026/2026-${String(i+1).padStart(2,'0')}.jpg`),
-    "2025": Array.from({length:27}, (_,i) => `/assets/lookbook/2025/2025-${String(i+1).padStart(2,'0')}.jpg`)
+    // 2025: 2인 모델 컷(12·10)을 상단으로, 단발/롱 모델을 번갈아 조화롭게 배치
+    "2025": [12,5,10,1,18,6,2,17,3,19,4,23,20,24,21,25,22,26,7,8,15,9,16,11,27,13,14]
+              .map(n => `/assets/lookbook/2025/2025-${String(n).padStart(2,'0')}.jpg`)
   };
 
   const galleryEl = document.getElementById('gallery');
