@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LEANON — About</title>
+<meta name="description" content="LEANON — 잠시 기대어, 당신에게 집중하는 공간. Curate your own vibe." />
+<meta property="og:title" content="LEANON — About" />
+<meta property="og:description" content="LEAN ON — 언제든 편히 기댈 수 있는 당신의 자리. Curate your own vibe." />
+<meta property="og:image" content="/assets/hero/main.jpg" />
+<meta property="og:type" content="website" />
+<style>
+  :root{ --ink:#1a1a1a; --paper:#f2f0eb; --muted:#8c877d; --line:#e2ddd3; --line-strong:#cfc9bd; --maxw:1080px; }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; min-height:100vh; min-height:100svh; background:var(--paper); color:var(--ink);
+    font-family:"Apple SD Gothic Neo","Pretendard","Helvetica Neue",Arial,"Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.7; font-weight:350;
+    display:flex; flex-direction:column;}
+  a{color:inherit; text-decoration:none}
+  img{display:block; max-width:100%}
+  .eyebrow{font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); font-weight:500}
+
+  /* NAV */
+  header{position:sticky; top:0; z-index:60; background:rgba(244,242,238,.9); border-bottom:1px solid var(--line);
+    backdrop-filter:saturate(140%) blur(6px); -webkit-backdrop-filter:saturate(140%) blur(6px);}
+  .nav{max-width:var(--maxw); margin:0 auto; padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:60px}
+  .nav .logo img{height:32px; width:auto}
+  .nav .home{font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:#4a463f; border-bottom:1px solid transparent; padding-bottom:2px}
+  .nav .home:hover{border-color:var(--ink); color:#000}
+
+  /* MAIN */
+  main{flex:1 1 auto; display:flex; align-items:center; justify-content:center; padding:72px 24px}
+  .about{width:100%; max-width:640px; text-align:center}
+  .about .mark{height:40px; width:auto; margin:0 auto 26px; opacity:.9}
+  .about h1{font-size:clamp(24px,4.4vw,36px); font-weight:300; letter-spacing:.2em; margin:10px 0 4px; text-transform:uppercase}
+  .about .tagline{font-style:italic; color:#5a564e; letter-spacing:.02em; margin:0 0 44px}
+
+  .story{color:#4a463f; font-size:15.5px; line-height:2}
+  .story p{margin:0 0 20px; word-break:keep-all; text-wrap:balance}
+  .story p:last-child{margin-bottom:0}
+  .story .accent{display:block; margin:34px 0; font-size:17px; color:var(--ink); font-weight:400; letter-spacing:.01em}
+  .story .en{font-style:italic; color:var(--muted)}
+  .story .sign{margin-top:38px; padding-top:26px; border-top:1px solid var(--line); font-size:14.5px; color:#3a372f}
+  .story .sign b{font-weight:600; letter-spacing:.06em}
+
+  footer{text-align:center; padding:34px 24px 44px; color:var(--muted); font-size:11.5px; letter-spacing:.06em; border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <a class="logo" href="/"><img src="/assets/brand/wordmark-dark.png" alt="LEANON" onerror="this.outerHTML='<span style=&quot;font-weight:700;letter-spacing:.28em;font-size:16px&quot;>LEANON</span>'" /></a>
+    <a class="home" href="/">← Home</a>
+  </div>
+</header>
+
+<main>
+  <div class="about">
+    <img class="mark" src="/assets/brand/symbol-dark.png" alt="LEANON" onerror="this.style.display='none'" />
+    <span class="eyebrow">About</span>
+    <h1>Lean on</h1>
+    <p class="tagline">Curate your own vibe</p>
+
+    <div class="story">
+      <p>바쁜 하루의 끝엔, 누구에게나 잠시 기대어 쉴 자리가 필요합니다.</p>
+      <p>우리 마음속엔 저마다의 무게가 있습니다. ‘오늘의 나’, ‘되고 싶은 나’, ‘있는 그대로의 나’. 빠르게 흘러가는 일상 속에서, 정작 나 자신을 마주하고 돌보기란 쉽지 않습니다.</p>
+      <p>LEANON은 당신이 잠시 기대어, 온전히 당신에게 집중할 수 있는 공간이 되길 소망합니다.</p>
+      <span class="accent">우리의 디자인은 손이 아닌 귀에서 시작됩니다.</span>
+      <p>당신의 이야기에 깊이 귀 기울여, 당신에게 꼭 맞는 분위기를 함께 찾아갑니다.</p>
+      <p>당신만의 분위기를 큐레이션하세요. <span class="en">‘Curate your own vibe.’</span></p>
+      <p class="sign"><b>LEAN ON</b> — ‘기대다’라는 뜻처럼,<br/>언제든 편히 기댈 수 있는 당신의 자리가 되겠습니다.</p>
+    </div>
+  </div>
+</main>
+
+<footer>© LEANON. All rights reserved.</footer>
+
+</body>
+</html>
