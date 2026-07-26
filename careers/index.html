@@ -32,9 +32,12 @@
   /* MAIN */
   main{flex:1 1 auto; display:flex; align-items:center; justify-content:center; padding:64px 24px}
   .careers{width:100%; max-width:860px}
-  .sec-head{text-align:center; margin-bottom:14px}
+  .sec-head{text-align:center; margin-bottom:22px}
   .sec-head h1{font-size:clamp(24px,4vw,34px); font-weight:300; letter-spacing:.16em; margin:10px 0 0; text-transform:uppercase}
-  .lead{text-align:center; color:#5a564e; margin:0 auto 48px; max-width:520px; font-size:15px}
+  .lead{color:#4a463f; margin:0 auto 44px; max-width:640px; font-size:15px; line-height:1.9}
+  .lead p{margin:0 0 15px; text-align:center}
+  .lead p:last-child{margin-bottom:0}
+  .lead .accent{color:var(--ink); font-weight:400}
 
   .cards{display:grid; grid-template-columns:1fr 1fr; gap:22px}
   @media(max-width:640px){ .cards{grid-template-columns:1fr; gap:18px} }
@@ -68,7 +71,13 @@
 <main>
   <div class="careers">
     <div class="sec-head"><span class="eyebrow">Careers</span><h1>Join LEANON</h1></div>
-    <p class="lead">당신의 감각으로 함께 성장할 팀원을 찾습니다.<br/>지원하실 포지션을 선택해 주세요.</p>
+    <div class="lead">
+      <p>린온을 시작하며 가슴에 품었던 철학, 그리고 우리가 매일 현장에서 증명해 내고 있는 우리의 진심을 함께 나눌 소중한 동료를 찾고 있습니다.</p>
+      <p>진정한 디자인은 화려한 테크닉이나 일시적인 유행이 아닙니다.<br/><span class="accent">우리의 디자인은 손이 아닌 귀에서 시작됩니다.</span></p>
+      <p>고객이 미처 말하지 못한 불편함까지 귀로 읽어내는 ‘깊은 공감’, 그 공감으로 디자인하고 고유한 분위기를 찾아내어 콘텐츠로 증명하는 크루입니다.</p>
+      <p>어제보다 나은 감각을 깨우고, 더 나은 나의 가치와 매일 단단해지는 성장을 경험하고 싶다면 린온과 함께해주세요.</p>
+      <p>서로의 든든한 버팀목이 되어주며, 저희와 함께 무한히 성장해 나갈 소중한 동료를 기다립니다.</p>
+    </div>
 
     <div class="cards">
       <a class="card" href="/hire_designer">
