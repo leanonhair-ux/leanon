@@ -51,8 +51,8 @@
   .scrollcue{position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:5; font-size:11px; letter-spacing:.25em; text-transform:uppercase; color:#4a463f; opacity:.7; animation:bob 2s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
 
-  /* CONTENT SECTIONS (paper) */
-  .paper{background:var(--paper)}
+  /* CONTENT SECTIONS (paper) — sticky 포스터 위로 올라와 덮도록 z-index 지정 */
+  .paper{background:var(--paper); position:relative; z-index:2}
   section.block{padding:92px 0}
   .sec-head{text-align:center; margin-bottom:48px}
   .sec-head h2{font-size:clamp(22px,3.4vw,30px); font-weight:300; letter-spacing:.16em; margin:10px 0 0; text-transform:uppercase}
@@ -84,7 +84,7 @@
   .loc .posterimg img{width:100%; height:auto}
 
   /* FOOTER */
-  footer{background:var(--paper); border-top:1px solid var(--line); padding:56px 0 70px; text-align:center}
+  footer{background:var(--paper); border-top:1px solid var(--line); padding:56px 0 70px; text-align:center; position:relative; z-index:2}
   footer .fmark{height:44px; margin:0 auto 18px; opacity:.85}
   footer .slogan{font-style:italic; color:#5a564e; margin-bottom:22px; letter-spacing:.02em}
   footer .social{display:flex; gap:22px; justify-content:center; margin-bottom:24px; flex-wrap:wrap}
