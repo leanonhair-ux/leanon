@@ -9,7 +9,6 @@
 <meta property="og:description" content="상담 기반 스타일링 스튜디오. Curate your own vibe." />
 <meta property="og:image" content="assets/hero/main.jpg" />
 <meta property="og:type" content="website" />
-<script>document.documentElement.classList.add('js');</script>
 <style>
   :root{ --ink:#1a1a1a; --paper:#f2f0eb; --muted:#8c877d; --line:#e2ddd3; --line-strong:#cfc9bd; --maxw:1080px; }
   *{box-sizing:border-box}
@@ -38,7 +37,8 @@
   @media(max-width:720px){ .nav ul{display:none} .nav .logo img{height:26px} }
 
   /* POSTER SECTIONS */
-  .poster{position:relative; min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
+  /* 스크롤 시 다음 사진이 이전 사진 위로 겹쳐 덮는 스택 효과 */
+  .poster{position:sticky; top:0; height:100vh; height:100svh; display:flex; align-items:center; justify-content:center; overflow:hidden}
   .poster img{width:100%; height:100%; object-fit:cover; object-position:center 32%; position:absolute; inset:0; margin:auto}
   /* hero is a landscape photo — fill the viewport */
   .poster.hero img{object-fit:cover; object-position:center 42%}
@@ -50,17 +50,6 @@
   .btn-solid:hover{background:#000}
   .scrollcue{position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:5; font-size:11px; letter-spacing:.25em; text-transform:uppercase; color:#4a463f; opacity:.7; animation:bob 2s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,6px)}}
-
-  /* SCROLL FADE-IN (부드러운 등장) */
-  html.js .reveal{opacity:0; transition:opacity 1.2s ease}
-  html.js .reveal.in{opacity:1}
-  html.js .reveal img{transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
-  html.js .reveal:not(.in) img{transform:scale(1.06)}
-  @media(prefers-reduced-motion:reduce){
-    html.js .reveal{opacity:1; transition:none}
-    html.js .reveal img{transition:none}
-    html.js .reveal:not(.in) img{transform:none}
-  }
 
   /* CONTENT SECTIONS (paper) */
   .paper{background:var(--paper)}
@@ -129,9 +118,9 @@
 </section>
 
 <!-- POSTER SCROLL -->
-<section class="poster reveal" style="background:#f1efe9"><img src="assets/home/home-01.jpg" srcset="assets/home/home-01-m.jpg 1400w, assets/home/home-01.jpg 2000w" sizes="100vw" alt="LEANON — Curate your own vibe" loading="lazy" decoding="async" /></section>
-<section class="poster reveal" style="background:#f1f2f2"><img src="assets/home/home-02.jpg" srcset="assets/home/home-02-m.jpg 1400w, assets/home/home-02.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
-<section class="poster reveal" style="background:#f0f1f1"><img src="assets/home/home-03.jpg" srcset="assets/home/home-03-m.jpg 1400w, assets/home/home-03.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
+<section class="poster" style="background:#f1efe9"><img src="assets/home/home-01.jpg" srcset="assets/home/home-01-m.jpg 1400w, assets/home/home-01.jpg 2000w" sizes="100vw" alt="LEANON — Curate your own vibe" loading="lazy" decoding="async" /></section>
+<section class="poster" style="background:#f1f2f2"><img src="assets/home/home-02.jpg" srcset="assets/home/home-02-m.jpg 1400w, assets/home/home-02.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
+<section class="poster" style="background:#f0f1f1"><img src="assets/home/home-03.jpg" srcset="assets/home/home-03-m.jpg 1400w, assets/home/home-03.jpg 2000w" sizes="100vw" alt="Curate your own vibe" loading="lazy" decoding="async" /></section>
 
 <!-- MENU -->
 <div class="paper">
@@ -239,16 +228,6 @@
 <script>
   var hdr=document.getElementById('hdr');
   addEventListener('scroll',function(){ hdr.classList.toggle('solid', scrollY>60); },{passive:true});
-
-  // 스크롤 시 사진 부드럽게 등장 (fade + 미세 줌아웃)
-  (function(){
-    var els = document.querySelectorAll('.reveal');
-    if(!('IntersectionObserver' in window)){ els.forEach(function(el){ el.classList.add('in'); }); return; }
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { threshold: 0.15 });
-    els.forEach(function(el){ io.observe(el); });
-  })();
 </script>
 
 </body>
