@@ -66,6 +66,17 @@
   .p-wait{background:#ece5d8; color:#8a8377}
   .p-assigned{background:#e7f0ff; color:#2f6bd0}
   .p-done{background:#e6f6ea; color:#2f9e58}
+  .p-hands{background:#fff1d6; color:#a06a0a; margin-left:6px}
+  .pillrow{margin-left:auto; display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+  .pillrow .pill{margin-left:0}
+  .pillrow .pill+.pill{margin-left:6px}
+  .handsbar{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; background:#fff; border:1px solid var(--line)}
+  .handsbar.done{background:#fff8e8; border-color:#f0c96a}
+  .handsbar .hlbl{font-size:12.5px; color:var(--muted); flex:1}
+  .handsbar.done .hlbl{color:#a06a0a; font-weight:700}
+  .handsbtn{border:1px solid var(--ink); background:var(--ink); color:#fff; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap}
+  .handsbtn.undo{background:#fff; color:var(--ink)}
+  .handsbtn:disabled{opacity:.5; cursor:default}
 
   .kv{font-size:13.5px; line-height:1.7}
   .kv .k{color:var(--muted); display:inline-block; min-width:96px}
@@ -210,6 +221,12 @@
     <div class="fchip" data-s="할당됨">디자이너 지정됨</div>
     <div class="fchip" data-s="상담완료">상담완료</div>
   </div>
+  <div class="filterbar" id="handsbar">
+    <span class="plabel">핸즈</span>
+    <div class="fchip" data-h="전체">전체</div>
+    <div class="fchip" data-h="완료">작성완료</div>
+    <div class="fchip" data-h="미완료">미완료</div>
+  </div>
   <div class="filterbar" id="periodbar">
     <span class="plabel">기간</span>
     <div class="fchip" data-p="all">전체기간</div>
@@ -292,6 +309,7 @@
   let rows = [];
   let filter = "전체";
   let statusFilter = "대기";
+  let handsFilter = "전체";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
   let viewMode = "list";   // "list" | "dash"
@@ -331,7 +349,7 @@
     showLogin();
   }
   function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
-  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderFilters(); renderStatusChips(); renderPeriodChips(); load(); }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderFilters(); renderStatusChips(); renderHandsChips(); renderPeriodChips(); load(); }
 
   // 아이디만 입력하면 자동으로 로그인용 도메인을 붙임 (직원은 이메일 외울 필요 없음)
   const toEmail = v => { v=(v||"").trim(); return v.includes("@") ? v : v+"@leanon.co.kr"; };
@@ -383,6 +401,12 @@
   }
   document.querySelectorAll("#statusbar .fchip").forEach(c => c.onclick = () => { statusFilter=c.dataset.s; renderStatusChips(); render(); });
 
+  /* ── 핸즈 필터 (상태와 독립) ── */
+  function renderHandsChips(){
+    document.querySelectorAll("#handsbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.h===handsFilter));
+  }
+  document.querySelectorAll("#handsbar .fchip").forEach(c => c.onclick = () => { handsFilter=c.dataset.h; renderHandsChips(); render(); });
+
   /* ── 기간 필터 ── */
   function renderPeriodChips(){
     document.querySelectorAll("#periodbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.p===activePeriod));
@@ -419,7 +443,7 @@
     document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.classList.toggle("active", b.dataset.v===v));
     const dash = v==="dash";
     // 디자이너 필터(#filters)는 대시보드에서도 사용 → 숨기지 않음. 상태 필터는 목록 전용
-    ["statusbar","count","grid"].forEach(id => $(id).style.display = dash ? "none" : "");
+    ["statusbar","handsbar","count","grid"].forEach(id => $(id).style.display = dash ? "none" : "");
     $("dashView").style.display = dash ? "block" : "none";
     render();
   }
@@ -457,6 +481,8 @@
     if(viewMode==="dash"){ renderDash(); return; }
     let list = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
+    if(handsFilter==="완료")  list = list.filter(r => r.hands_done===true);
+    else if(handsFilter==="미완료") list = list.filter(r => r.hands_done!==true);
     list = list.filter(inPeriod);
     $("count").textContent = `${list.length}건`;
     if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 상담이 없어요.</div>`; return; }
@@ -611,6 +637,11 @@
     if(s==="할당됨")   return '<span class="pill p-assigned">디자이너 지정됨</span>';
     return '<span class="pill p-wait">대기</span>';
   }
+  function handsPill(r){
+    if(r.hands_done!==true) return "";
+    const ts = r.hands_done_at ? ` (${fmtDT(r.hands_done_at)})` : "";
+    return `<span class="pill p-hands" title="핸즈 작성완료${ts}">핸즈완료</span>`;
+  }
 
   function cardHTML(r){
     const n = r.designer_note || {};
@@ -622,7 +653,12 @@
           <div class="cmeta">${esc(r.birth)||""} · ${esc(r.region_si)||""} ${esc(r.region_gu)||""}</div>
           <div class="cdate">🕓 ${fmtDT(r.created_at)} 제출</div>
         </div>
-        ${statusPill(r.status)}
+        <div class="pillrow">${statusPill(r.status)}${handsPill(r)}</div>
+      </div>
+
+      <div class="handsbar ${r.hands_done?'done':''}">
+        <span class="hlbl">${r.hands_done ? `핸즈 작성완료${r.hands_done_at?` · ${fmtDT(r.hands_done_at)}`:""}` : "핸즈 미작성"}</span>
+        <button class="handsbtn ${r.hands_done?'undo':''}">${r.hands_done?'완료 해제':'핸즈작성완료'}</button>
       </div>
 
       <div class="kv">
@@ -702,6 +738,18 @@
     const pad = card.querySelector(".drawpad");
     initPad(pad, n.drawing);
     card.querySelector(".clearpad").onclick = () => pad._clear();
+
+    // 핸즈 작성완료 토글 (상태와 독립)
+    card.querySelector(".handsbtn").onclick = async () => {
+      const btn = card.querySelector(".handsbtn");
+      const next = !r.hands_done;
+      btn.disabled = true;
+      const patch = { hands_done: next, hands_done_at: next ? new Date().toISOString() : null };
+      const { error } = await sb.from("consultations").update(patch).eq("id", r.id);
+      btn.disabled = false;
+      if(error) return alert("핸즈 상태 저장 오류: "+error.message);
+      Object.assign(r, patch); render();
+    };
 
     // 할당
     card.querySelector(".assignSel").onchange = async e => {
