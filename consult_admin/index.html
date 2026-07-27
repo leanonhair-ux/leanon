@@ -70,12 +70,8 @@
   .pillrow{margin-left:auto; display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end}
   .pillrow .pill{margin-left:0}
   .pillrow .pill+.pill{margin-left:6px}
-  .handsbar{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px; background:#fff; border:1px solid var(--line)}
-  .handsbar.done{background:#fff8e8; border-color:#f0c96a}
-  .handsbar .hlbl{font-size:12.5px; color:var(--muted); flex:1}
-  .handsbar.done .hlbl{color:#a06a0a; font-weight:700}
-  .handsbtn{border:1px solid var(--ink); background:var(--ink); color:#fff; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap}
-  .handsbtn.undo{background:#fff; color:var(--ink)}
+  .handsbtn{margin-top:10px; width:100%; border:none; background:#f0c96a; color:#5a3d00; border-radius:8px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit}
+  .handsbtn.done{background:#fff8e8; color:#a06a0a; border:1.5px solid #f0c96a}
   .handsbtn:disabled{opacity:.5; cursor:default}
 
   .kv{font-size:13.5px; line-height:1.7}
@@ -656,11 +652,6 @@
         <div class="pillrow">${statusPill(r.status)}${handsPill(r)}</div>
       </div>
 
-      <div class="handsbar ${r.hands_done?'done':''}">
-        <span class="hlbl">${r.hands_done ? `핸즈 작성완료${r.hands_done_at?` · ${fmtDT(r.hands_done_at)}`:""}` : "핸즈 미작성"}</span>
-        <button class="handsbtn ${r.hands_done?'undo':''}">${r.hands_done?'완료 해제':'핸즈작성완료'}</button>
-      </div>
-
       <div class="kv">
         <div><span class="k">마지막 시술</span> 컷 ${r.last_cut??"-"}개월 · 펌 ${r.last_perm??"-"}개월 · 컬러 ${r.last_color??"-"}개월 ${r.color_type?`(${esc(r.color_type)})`:""}</div>
         <div><span class="k">레퍼런스</span> ${esc(r.reference)||"-"}</div>
@@ -696,6 +687,8 @@
         <div class="draw-tools"><button type="button" class="clearpad">전체 지우기</button></div>
         <button class="savebtn">저장 (상담완료 처리)</button>
       </details>
+
+      <button class="handsbtn ${r.hands_done?'done':''}">${r.hands_done ? `✓ 핸즈 작성완료${r.hands_done_at?` · ${fmtDT(r.hands_done_at)}`:""} (해제)` : '핸즈작성완료'}</button>
     </div>`;
   }
 
