@@ -112,10 +112,6 @@
       <div class="secsub">자기소개</div>
 
       <div class="field">
-        <label class="q" for="why_beauty">미용을 직업으로 선택하게 된 계기 <span class="req">*</span></label>
-        <textarea class="in" id="why_beauty" name="why_beauty" required></textarea>
-      </div>
-      <div class="field">
         <label class="q" for="personality">본인의 성격과 장단점 <span class="req">*</span></label>
         <textarea class="in" id="personality" name="personality" required></textarea>
       </div>
@@ -126,10 +122,6 @@
       <div class="field">
         <label class="q" for="important_factor">입사 시 가장 중요하게 생각하는 것과 그 이유 <span class="req">*</span></label>
         <textarea class="in" id="important_factor" name="important_factor" required></textarea>
-      </div>
-      <div class="field">
-        <label class="q" for="career_goal">린온에서의 구체적인 커리어 목표와 디자이너로서의 포부 <span class="req">*</span></label>
-        <textarea class="in" id="career_goal" name="career_goal" required></textarea>
       </div>
       <div class="field">
         <label class="q" for="appeal">본인이 채용되어야 하는 이유 / 추가로 어필하고 싶은 점 <span class="req">*</span></label>
@@ -175,9 +167,9 @@
       name: fd.get('name'), birth_mbti: fd.get('birth_mbti'), phone: fd.get('phone'),
       instagram: fd.get('instagram'), address: fd.get('address'),
       education: fd.get('education'), experience: fd.get('experience'), certifications: fd.get('certifications'),
-      why_beauty: fd.get('why_beauty'), personality: fd.get('personality'),
+      personality: fd.get('personality'),
       leanon_diff: fd.get('leanon_diff'), important_factor: fd.get('important_factor'),
-      career_goal: fd.get('career_goal'), appeal: fd.get('appeal'),
+      appeal: fd.get('appeal'), why_beauty: '', career_goal: '',
       consent: fd.get('consent') === '네', status: '대기'
     };
     try {
