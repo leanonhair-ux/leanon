@@ -229,6 +229,12 @@
     <div class="fchip" data-h="완료">작성완료</div>
     <div class="fchip" data-h="미완료">미완료</div>
   </div>
+  <div class="filterbar" id="natbar">
+    <span class="plabel">국적</span>
+    <div class="fchip" data-n="전체">전체</div>
+    <div class="fchip" data-n="내국인">내국인</div>
+    <div class="fchip" data-n="외국인">외국인</div>
+  </div>
   <div class="filterbar" id="periodbar">
     <span class="plabel">기간</span>
     <div class="fchip" data-p="all">전체기간</div>
@@ -251,6 +257,11 @@
       <div class="dash-section">
         <div class="dash-sectitle">디자이너별 상담 수</div>
         <div class="dash-list" id="dashList"></div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-sectitle">내국인 / 외국인 <span class="dash-legend">이름이 한글이 아니면 외국인(교포 포함)</span></div>
+        <div class="dash-list" id="dashNationality"></div>
       </div>
 
       <div class="dash-section">
@@ -313,6 +324,7 @@
   let filter = "전체";
   let statusFilter = "전체";
   let handsFilter = "전체";
+  let natFilter = "전체";
   let activePeriod = "all";
   let fromDate = null, toDate = null;
   let viewMode = "list";   // "list" | "dash"
@@ -355,7 +367,7 @@
     showLogin();
   }
   function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
-  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderFilters(); renderStatusChips(); renderHandsChips(); renderPeriodChips(); load(); }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; renderFilters(); renderStatusChips(); renderHandsChips(); renderNatChips(); renderPeriodChips(); load(); }
 
   // 아이디만 입력하면 자동으로 로그인용 도메인을 붙임 (직원은 이메일 외울 필요 없음)
   const toEmail = v => { v=(v||"").trim(); return v.includes("@") ? v : v+"@leanon.co.kr"; };
@@ -413,6 +425,12 @@
   }
   document.querySelectorAll("#handsbar .fchip").forEach(c => c.onclick = () => { handsFilter=c.dataset.h; renderHandsChips(); render(); });
 
+  /* ── 국적 필터 (내국인/외국인, 이름 문자 기준) ── */
+  function renderNatChips(){
+    document.querySelectorAll("#natbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.n===natFilter));
+  }
+  document.querySelectorAll("#natbar .fchip").forEach(c => c.onclick = () => { natFilter=c.dataset.n; renderNatChips(); render(); });
+
   /* ── 기간 필터 ── */
   function renderPeriodChips(){
     document.querySelectorAll("#periodbar .fchip").forEach(c => c.classList.toggle("active", c.dataset.p===activePeriod));
@@ -449,7 +467,7 @@
     document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.classList.toggle("active", b.dataset.v===v));
     const dash = v==="dash";
     // 디자이너 필터(#filters)는 대시보드에서도 사용 → 숨기지 않음. 상태 필터는 목록 전용
-    ["statusbar","handsbar","count","grid","moreWrap"].forEach(id => $(id).style.display = dash ? "none" : "");
+    ["statusbar","handsbar","natbar","count","grid","moreWrap"].forEach(id => $(id).style.display = dash ? "none" : "");
     $("dashView").style.display = dash ? "block" : "none";
     render();
   }
@@ -489,9 +507,11 @@
     if(statusFilter!=="전체") list = list.filter(r => (r.status||"대기")===statusFilter);
     if(handsFilter==="완료")  list = list.filter(r => r.hands_done===true);
     else if(handsFilter==="미완료") list = list.filter(r => r.hands_done!==true);
+    if(natFilter==="내국인")      list = list.filter(r => !isForeign(r));
+    else if(natFilter==="외국인") list = list.filter(r => isForeign(r));
     list = list.filter(inPeriod);
     // 필터가 바뀌면 1페이지로 리셋 / 인플레이스 갱신(담당지정·메모 등)이면 현재 페이지 유지
-    const key = [filter,statusFilter,handsFilter,activePeriod,fromDate,toDate].join("|");
+    const key = [filter,statusFilter,handsFilter,natFilter,activePeriod,fromDate,toDate].join("|");
     if(key!==lastKey){ shown = PAGE_SIZE; lastKey = key; }
     $("count").textContent = `${list.length}건`;
     if(!list.length){ $("grid").innerHTML=`<div class="empty">해당 조건의 상담이 없어요.</div>`; $("moreWrap").innerHTML=""; return; }
@@ -537,7 +557,7 @@
     $("dashSub").textContent = `건 · ${periodLabel()}`;
     if(!total){
       $("dashList").innerHTML = `<div class="dash-empty">해당 기간에 작성된 상담이 없어요.</div>`;
-      ["dashUpsell","dashAge","dashImage","dashConcern"].forEach(id => $(id).innerHTML = "");
+      ["dashUpsell","dashNationality","dashAge","dashImage","dashConcern"].forEach(id => $(id).innerHTML = "");
       return;
     }
     $("dashList").innerHTML = entries.map(e => `
@@ -547,7 +567,8 @@
         <div class="dash-num">${e.n}</div>
       </div>`).join("");
 
-    // 1-2) 연령대 / 추구 이미지 / 고민 빈도 분포 (전체)
+    // 1-2) 내/외국인 · 연령대 / 추구 이미지 / 고민 빈도 분포 (전체)
+    renderNationality("dashNationality", list, total);
     renderAge("dashAge", list, total);
     renderFreq("dashImage", list, "image", IMAGE_OPTS, total);
     renderFreq("dashConcern", list, "concern", CONCERN_OPTS, total);
@@ -609,6 +630,48 @@
     if(age < 40) return "30대";
     if(age < 50) return "40대";
     return "50대+";
+  }
+  // 내국인/외국인 판별 (이름이 한글이 아니면 외국인 — 교포 포함). 빈 이름은 어느 쪽도 아님
+  function isHangulName(s){ return /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(s||""); }
+  function isForeign(r){ const n=(r.name||"").trim(); return n!=="" && !isHangulName(n); }
+  // 외국인 언어 라벨: 신규는 lang 컬럼 우선, 과거 데이터는 이름 문자로 추정
+  function foreignLangLabel(r){
+    const L=(r.lang||"").toLowerCase();
+    if(L==="zh") return "중화권"; if(L==="ja") return "일본"; if(L==="en") return "영문/기타";
+    const n=r.name||"";
+    if(/[ぁ-ゟ゠-ヿ]/.test(n)) return "일본";
+    if(/[一-鿿]/.test(n))    return "중화권";
+    return "영문/기타";
+  }
+  // 내국인 / 외국인 분포
+  function renderNationality(containerId, list, total){
+    let dom=0, frn=0, unknown=0;
+    const fl = new Map([["중화권",0],["영문/기타",0],["일본",0]]);
+    list.forEach(r => {
+      const nm=(r.name||"").trim();
+      if(!nm){ unknown++; return; }
+      if(isHangulName(nm)) dom++;
+      else { frn++; const k=foreignLangLabel(r); fl.set(k,(fl.get(k)||0)+1); }
+    });
+    let entries=[{name:"내국인",n:dom},{name:"외국인",n:frn}];
+    if(unknown) entries.push({name:"미상",n:unknown,muted:true});
+    if(!(dom||frn||unknown)){ $(containerId).innerHTML = `<div class="dash-empty">응답 데이터가 없어요.</div>`; return; }
+    const max=Math.max(1,dom,frn);
+    let html = entries.map(e => {
+      const m=e.muted?"muted":"";
+      const pct=total?Math.round(e.n/total*100):0;
+      return `
+      <div class="dash-row">
+        <div class="dash-name ${m}">${esc(e.name)}</div>
+        <div class="dash-bar" title="${e.n}건 · ${pct}%"><div class="dash-fill ${m}" style="width:${(e.n/max*100).toFixed(1)}%"></div></div>
+        <div class="dash-num">${e.n}</div>
+      </div>`;
+    }).join("");
+    if(frn>0){
+      const parts=[...fl.entries()].filter(([,n])=>n>0).map(([k,n])=>`${k} ${n}`).join(" · ");
+      html += `<div style="font-size:12px;color:var(--muted);padding:8px 2px 0">외국인 내역 · ${esc(parts)}</div>`;
+    }
+    $(containerId).innerHTML = html;
   }
   // 연령대 분포 (연령 오름차순 고정 순서)
   function renderAge(containerId, list, total){
