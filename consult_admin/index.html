@@ -467,7 +467,8 @@
     document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.classList.toggle("active", b.dataset.v===v));
     const dash = v==="dash";
     // 디자이너 필터(#filters)는 대시보드에서도 사용 → 숨기지 않음. 상태 필터는 목록 전용
-    ["statusbar","handsbar","natbar","count","grid","moreWrap"].forEach(id => $(id).style.display = dash ? "none" : "");
+    // 국적 필터(natbar)는 디자이너·기간 필터처럼 대시보드에서도 사용 → 숨기지 않음
+    ["statusbar","handsbar","count","grid","moreWrap"].forEach(id => $(id).style.display = dash ? "none" : "");
     $("dashView").style.display = dash ? "block" : "none";
     render();
   }
@@ -531,7 +532,9 @@
   function renderDash(){
     // 디자이너 필터(전체=기본) 적용 → 선택 시 그 디자이너 상담만 집계
     const base = filter==="전체" ? rows : rows.filter(r => r.assigned_designer===filter);
-    const list = base.filter(inPeriod);
+    let list = base.filter(inPeriod);
+    if(natFilter==="내국인")      list = list.filter(r => !isForeign(r));
+    else if(natFilter==="외국인") list = list.filter(r => isForeign(r));
     // 디자이너별 집계 (건수 + 오늘 시술 의향). today 저장값은 언어 무관 한국어 → 부분일치로 분류
     const stat = new Map();   // name -> {n, more, only}
     DESIGNERS.forEach(d => stat.set(d, {n:0, more:0, only:0}));
