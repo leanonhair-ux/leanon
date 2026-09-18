@@ -454,7 +454,8 @@
       color_type: fd.get('color_type'), reference: fd.getAll('reference').join(', ') || null,
       today: fd.get('today'), length: fd.getAll('length').join(', ') || null,
       image: fd.getAll('image'), concern: fd.getAll('concern'), styling: fd.getAll('styling'),
-      past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기'
+      past: fd.get('past'), consent: fd.get('consent') === '네', status: '대기',
+      lang: lang
     };
     try {
       if (sb) {
