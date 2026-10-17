@@ -98,6 +98,15 @@
   #dashView{display:none; padding:18px 18px 70px; max-width:1180px; margin:0 auto}
   .dashctl{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px}
   .dashctl select{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fff; font-weight:700}
+  .dashctl .monthin{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fff; color:var(--ink)}
+  .chiprow{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:16px}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:#fff; color:var(--ink);
+        border-radius:999px; padding:7px 13px; font-size:13px; font-weight:600; cursor:pointer; user-select:none}
+  .chip i{width:9px; height:9px; border-radius:50%; display:inline-block}
+  .chip.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .chipbtns{display:flex; gap:6px}
+  .minibtn{border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:8px; padding:6px 10px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit}
   .dash-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:22px 34px; margin-top:16px}
   .dash-section{min-width:0}
   .dash-sectitle{font-size:14px; font-weight:800; margin-bottom:16px}
@@ -208,18 +217,23 @@
   <!-- 대시보드 -->
   <div id="dashView">
     <div class="dashctl">
-      <span class="plabel" style="font-size:13px;color:var(--muted)">월 선택</span>
-      <select id="dashMonth"></select>
+      <span class="plabel" style="font-size:13px;color:var(--muted)">기간</span>
+      <input type="month" id="dashFrom" class="monthin" />
+      <span style="color:var(--muted)">~</span>
+      <input type="month" id="dashTo" class="monthin" />
+    </div>
+    <div class="chiprow">
+      <div class="chips" id="desChips"></div>
+      <div class="chipbtns">
+        <button type="button" id="selAll" class="minibtn">전체</button>
+        <button type="button" id="selNone" class="minibtn">해제</button>
+      </div>
     </div>
     <div class="dash-cards" id="dashKpi"></div>
     <div class="dash-grid" id="dashMonthGrid"></div>
 
     <hr style="border:0;border-top:1px solid var(--line);margin:30px 0 22px" />
-
-    <div class="dashctl">
-      <span class="plabel" style="font-size:13px;color:var(--muted)">디자이너 선택 (월별 추이 · 면담용)</span>
-      <select id="dashDesigner"></select>
-    </div>
+    <div class="dash-sectitle" style="margin-bottom:14px">월별 추이 <span style="font-weight:400;color:var(--muted);font-size:13px">· 선택 디자이너 비교</span></div>
     <div class="dash-grid" id="dashTrendGrid"></div>
     <div id="chartTip" class="charttip" style="display:none"></div>
   </div>
@@ -238,6 +252,7 @@
 
   let rows = [];
   let view = "manage";
+  const dashSel = new Set(INPUT_DESIGNERS);   // 대시보드에서 선택된 디자이너(다중)
 
   /* ── 인증 (상담 관리와 동일 계정) ── */
   const CRED_KEY = "leanon_admin_cred", LOGOUT_KEY = "leanon_admin_logout";
@@ -292,7 +307,8 @@
   function setupSelectors(){
     const dOpts = INPUT_DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
     $("filterDesigner").innerHTML = `<option value="">전체</option>` + dOpts;
-    $("dashDesigner").innerHTML = dOpts;
+    // 대시보드 디자이너 다중선택 칩
+    $("desChips").innerHTML = INPUT_DESIGNERS.map(d=>`<button type="button" class="chip on" data-d="${esc(d)}"><i style="background:${colorFor(d)}"></i>${esc(d)}</button>`).join("");
     // 기본 월 = 이번 달
     const now = new Date();
     $("gMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -301,8 +317,17 @@
   $("gridBody").addEventListener("input", markDirty);   // 값 수정 시 저장 필요 알림
   $("filterMonth").onchange = render;
   $("filterDesigner").onchange = render;
-  $("dashMonth").onchange = renderDash;
-  $("dashDesigner").onchange = renderDash;
+  $("dashFrom").onchange = renderDash;
+  $("dashTo").onchange = renderDash;
+  $("desChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if(!b) return;
+    const d = b.dataset.d;
+    if(dashSel.has(d)) dashSel.delete(d); else dashSel.add(d);
+    b.classList.toggle("on", dashSel.has(d));
+    renderDash();
+  });
+  $("selAll").onclick  = () => { INPUT_DESIGNERS.forEach(d=>dashSel.add(d)); document.querySelectorAll("#desChips .chip").forEach(c=>c.classList.add("on")); renderDash(); };
+  $("selNone").onclick = () => { dashSel.clear(); document.querySelectorAll("#desChips .chip").forEach(c=>c.classList.remove("on")); renderDash(); };
   // 라인차트 점 호버 → 값 툴팁
   (function(){
     const tip = $("chartTip"), grid = $("dashTrendGrid");
@@ -322,7 +347,7 @@
     // 월 필터 옵션 채우기
     const months = [...new Set(rows.map(r=>r.month))].sort().reverse();
     $("filterMonth").innerHTML = `<option value="">전체</option>` + months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
-    $("dashMonth").innerHTML = months.length ? months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("") : `<option value="">(데이터 없음)</option>`;
+    if(months.length){ const asc=[...months].sort(); if(!$("dashFrom").value) $("dashFrom").value=asc[0]; if(!$("dashTo").value) $("dashTo").value=asc[asc.length-1]; }
     buildGrid();
     render();
   }
@@ -494,49 +519,49 @@
       </div>`).join("");
     return `<div class="dash-section"><div class="dash-sectitle">${esc(title)}</div><div class="dash-list">${body}</div></div>`;
   }
-  // 단일 디자이너 월별 추이 라인차트 섹션
-  function trendChart(label, dd, months, vals, money){
-    const svg = lineChart(months, [{ name:dd, color:"#1c1a17", vals }], money);
-    return `<div class="dash-section"><div class="dash-sectitle">${esc(label)}</div>${svg}</div>`;
+  // 디자이너별 고정 색상
+  function colorFor(d){ const i=INPUT_DESIGNERS.indexOf(d); return PALETTE[(i<0?0:i)%PALETTE.length]; }
+  function lineSection(label, months, series, money){
+    return `<div class="dash-section"><div class="dash-sectitle">${esc(label)}</div>${lineChart(months, series, money)}</div>`;
   }
 
   function renderDash(){
-    // 1) 선택 월 · 디자이너별 비교 (막대)
-    const dm = $("dashMonth").value;
-    const monthRows = rows.filter(r=>r.month===dm);
-    const kpi = monthRows.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
-    if(!dm || !monthRows.length){
-      $("dashKpi").innerHTML=""; $("dashMonthGrid").innerHTML=`<div class="dash-empty">${dm?`${esc(dm)} 데이터가 없어요.`:"입력된 데이터가 없어요."}</div>`;
-    } else {
-      $("dashKpi").innerHTML = `
-        <div class="kpi"><div class="l">${esc(dm)} 총매출</div><div class="v">${won(kpi.rev)}<span style="font-size:13px;font-weight:600"> 원</span></div></div>
-        <div class="kpi"><div class="l">총 st수</div><div class="v">${num(kpi.st)}</div></div>
-        <div class="kpi"><div class="l">총 신규</div><div class="v">${num(kpi.nw)}</div></div>
-        <div class="kpi"><div class="l">총 재방</div><div class="v">${num(kpi.rt)}</div></div>`;
-      const byDes = name => monthRows.filter(r=>r.designer===name);
-      const present = INPUT_DESIGNERS.filter(d=>byDes(d).length);
-      const mk = (f)=> present.map(d=>({name:d, v: byDes(d).reduce((s,r)=>s+ +f(r),0)})).sort((a,b)=>b.v-a.v);
-      $("dashMonthGrid").innerHTML =
-        barBlock(`디자이너별 매출 · ${dm}`, mk(r=>r.revenue), won) +
-        barBlock(`디자이너별 신규 · ${dm}`, mk(r=>r.new_count), num) +
-        barBlock(`디자이너별 재방 · ${dm}`, mk(r=>r.return_count), num) +
-        barBlock(`디자이너별 st수 · ${dm}`, mk(r=>r.st_count), num);
-    }
+    let from=$("dashFrom").value, to=$("dashTo").value;
+    if(from && to && from>to){ const t=from; from=to; to=t; $("dashFrom").value=from; $("dashTo").value=to; }
+    const inRange = m => (!from||m>=from) && (!to||m<=to);
+    const sel = INPUT_DESIGNERS.filter(d=>dashSel.has(d));
+    const months = [...new Set(rows.map(r=>r.month))].filter(inRange).sort();
+    const rangeRows = rows.filter(r=> inRange(r.month) && dashSel.has(r.designer));
+    const rangeLbl = (from||to) ? `${from||'처음'} ~ ${to||'끝'}` : '전체 기간';
 
-    // 2) 선택 디자이너 · 월별 추이 (라인 그래프, 면담용)
-    const dd = $("dashDesigner").value;
-    const desRows = rows.filter(r=>r.designer===dd).slice().sort((a,b)=>a.month<b.month?-1:1);
-    if(!dd || !desRows.length){
-      $("dashTrendGrid").innerHTML=`<div class="dash-empty">${dd?`${esc(dd)} 데이터가 없어요.`:"디자이너를 선택하세요."}</div>`;
-    } else {
-      const ms = desRows.map(r=>r.month);
-      const vget = f => desRows.map(r=>Number(r[f]||0));
-      $("dashTrendGrid").innerHTML =
-        trendChart(`${dd} · 월별 매출`, dd, ms, vget('revenue'), true) +
-        trendChart(`${dd} · 월별 신규`, dd, ms, vget('new_count'), false) +
-        trendChart(`${dd} · 월별 재방`, dd, ms, vget('return_count'), false) +
-        trendChart(`${dd} · 월별 st수`, dd, ms, vget('st_count'), false);
-    }
+    // KPI (기간 합계)
+    const k = rangeRows.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
+    $("dashKpi").innerHTML = `
+      <div class="kpi"><div class="l">${esc(rangeLbl)} 총매출</div><div class="v">${won(k.rev)}<span style="font-size:13px;font-weight:600"> 원</span></div></div>
+      <div class="kpi"><div class="l">총 st수</div><div class="v">${num(k.st)}</div></div>
+      <div class="kpi"><div class="l">총 신규</div><div class="v">${num(k.nw)}</div></div>
+      <div class="kpi"><div class="l">총 재방</div><div class="v">${num(k.rt)}</div></div>`;
+
+    if(!sel.length){ $("dashMonthGrid").innerHTML=`<div class="dash-empty">디자이너를 1명 이상 선택하세요.</div>`; $("dashTrendGrid").innerHTML=""; return; }
+    if(!rangeRows.length){ $("dashMonthGrid").innerHTML=`<div class="dash-empty">선택한 기간·디자이너 데이터가 없어요.</div>`; $("dashTrendGrid").innerHTML=""; return; }
+
+    // 1) 디자이너별 비교 (기간 합계 막대)
+    const sumBy=(d,f)=> rangeRows.filter(r=>r.designer===d).reduce((s,r)=>s+ +r[f],0);
+    const mk=f=> sel.map(d=>({name:d, v:sumBy(d,f)})).sort((a,b)=>b.v-a.v);
+    $("dashMonthGrid").innerHTML =
+      barBlock('디자이너별 매출 · 기간합계', mk('revenue'), won) +
+      barBlock('디자이너별 신규 · 기간합계', mk('new_count'), num) +
+      barBlock('디자이너별 재방 · 기간합계', mk('return_count'), num) +
+      barBlock('디자이너별 st수 · 기간합계', mk('st_count'), num);
+
+    // 2) 월별 추이 (선택 디자이너 다중 라인)
+    const seriesFor = f => sel.map(d=>({ name:d, color:colorFor(d),
+      vals: months.map(m=>{ const r=rows.find(x=>x.designer===d && x.month===m); return r?Number(r[f]||0):null; }) }));
+    $("dashTrendGrid").innerHTML =
+      lineSection('월별 매출', months, seriesFor('revenue'), true) +
+      lineSection('월별 신규', months, seriesFor('new_count'), false) +
+      lineSection('월별 재방', months, seriesFor('return_count'), false) +
+      lineSection('월별 st수', months, seriesFor('st_count'), false);
   }
 
   init();
