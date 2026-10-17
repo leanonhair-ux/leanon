@@ -1,0 +1,17 @@
+{
+  "name": "LEANON 실적 관리",
+  "short_name": "실적관리",
+  "description": "LEANON 디자이너 실적 관리",
+  "lang": "ko",
+  "start_url": "/manager/",
+  "scope": "/manager/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/assets/app/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/app/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/app/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
