@@ -106,6 +106,11 @@
   .chartcard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-top:12px}
   .charttitle{font-size:14px; font-weight:800; margin-bottom:8px}
   .dash-section svg{width:100%; height:auto; display:block}
+  #dashTrendGrid{grid-template-columns:repeat(auto-fit, minmax(460px, 1fr)); gap:26px 30px}
+  @media(max-width:520px){ #dashTrendGrid{grid-template-columns:1fr} }
+  .charttip{position:fixed; z-index:60; background:#1c1a17; color:#fff; font-size:12.5px; font-weight:700;
+            padding:7px 10px; border-radius:8px; pointer-events:none; white-space:nowrap;
+            transform:translate(-50%,-100%); box-shadow:0 4px 14px rgba(0,0,0,.2)}
   .legend{display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:12px}
   .legend .lg{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700}
   .legend .lg i{width:16px; height:3px; border-radius:2px; display:inline-block}
@@ -209,6 +214,7 @@
       <select id="dashDesigner"></select>
     </div>
     <div class="dash-grid" id="dashTrendGrid"></div>
+    <div id="chartTip" class="charttip" style="display:none"></div>
   </div>
 </div>
 
@@ -290,6 +296,16 @@
   $("filterDesigner").onchange = render;
   $("dashMonth").onchange = renderDash;
   $("dashDesigner").onchange = renderDash;
+  // 라인차트 점 호버 → 값 툴팁
+  (function(){
+    const tip = $("chartTip"), grid = $("dashTrendGrid");
+    grid.addEventListener("pointermove", e => {
+      const lab = e.target && e.target.getAttribute && e.target.getAttribute("data-tip");
+      if(lab){ tip.textContent = lab; tip.style.left = e.clientX+"px"; tip.style.top = (e.clientY-14)+"px"; tip.style.display=""; }
+      else { tip.style.display="none"; }
+    });
+    grid.addEventListener("pointerleave", () => { tip.style.display="none"; });
+  })();
 
   /* ── 데이터 로드 ── */
   async function load(){
@@ -416,7 +432,13 @@
       if(!pts.length) return;
       const d = pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
       svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.5" ${s.dash?'stroke-dasharray="5 4" stroke-width="2"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
-      s.vals.forEach((v,i)=>{ if(v!=null) svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="3.5" fill="${s.color}"><title>${esc(s.name)} ${esc(months[i])}: ${esc(money?compactMoney(v):v.toLocaleString())}</title></circle>`; });
+      s.vals.forEach((v,i)=>{
+        if(v==null) return;
+        const cx=xAt(i).toFixed(1), cy=yAt(v).toFixed(1);
+        const lab = `${s.name} · ${months[i]} · ${money?won(v)+'원':v.toLocaleString()}`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${s.color}"/>`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="12" fill="transparent" data-tip="${esc(lab)}" style="cursor:pointer"/>`;
+      });
     });
     svg += `</svg>`;
     return svg;
