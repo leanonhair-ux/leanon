@@ -289,6 +289,11 @@
         <div class="dash-sectitle">고민 · 보완하고 싶은 점 <span class="dash-legend">복수 선택 가능</span></div>
         <div class="dash-list freq" id="dashConcern"></div>
       </div>
+
+      <div class="dash-section">
+        <div class="dash-sectitle">디자인 레퍼런스 <span class="dash-legend">전체 상담 대비 비율</span></div>
+        <div class="dash-list" id="dashRef"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -560,7 +565,7 @@
     $("dashSub").textContent = `건 · ${periodLabel()}`;
     if(!total){
       $("dashList").innerHTML = `<div class="dash-empty">해당 기간에 작성된 상담이 없어요.</div>`;
-      ["dashUpsell","dashNationality","dashAge","dashImage","dashConcern"].forEach(id => $(id).innerHTML = "");
+      ["dashUpsell","dashNationality","dashAge","dashImage","dashConcern","dashRef"].forEach(id => $(id).innerHTML = "");
       return;
     }
     $("dashList").innerHTML = entries.map(e => `
@@ -575,6 +580,7 @@
     renderAge("dashAge", list, total);
     renderFreq("dashImage", list, "image", IMAGE_OPTS, total);
     renderFreq("dashConcern", list, "concern", CONCERN_OPTS, total);
+    renderReference("dashRef", list, total);
 
     // 2) 추가 시술 의향 분포 (담당 지정된 디자이너별, 각자 상담 대비 비율)
     let up = [...stat.entries()].map(([name,s]) => ({name, ...s})).filter(e => e.n>0);
@@ -712,6 +718,22 @@
         </div>
         <div class="dash-num">${e.n}</div>
       </div>`).join("");
+  }
+  // 디자인 레퍼런스 — 추천 희망 / 사진 지참 비율 (전체 상담 대비 %)
+  function renderReference(containerId, list, total){
+    const opts=["추천 받고 싶어요","사진 있어요"];
+    const cnt=new Map(opts.map(o=>[o,0]));
+    list.forEach(r => asArr(r.reference).forEach(v=>{ if(cnt.has(v)) cnt.set(v, cnt.get(v)+1); }));
+    if(!total){ $(containerId).innerHTML = `<div class="dash-empty">응답 데이터가 없어요.</div>`; return; }
+    $(containerId).innerHTML = opts.map(o=>{
+      const n=cnt.get(o), pct= Math.round(n/total*100);
+      return `
+      <div class="dash-row">
+        <div class="dash-name">${esc(o)}</div>
+        <div class="dash-bar" title="${n}건 / ${total}건"><div class="dash-fill" style="width:${(n/total*100).toFixed(1)}%"></div></div>
+        <div class="dash-num">${pct}%</div>
+      </div>`;
+    }).join("");
   }
 
   function arr(a){ return Array.isArray(a)&&a.length ? a.map(x=>`<span class="tag">${esc(x)}</span>`).join("") : '<span class="cmeta">-</span>'; }
