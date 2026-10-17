@@ -318,6 +318,14 @@
     await load();
     $("formMsg").className="formmsg ok"; $("formMsg").textContent = `${month} · ${payload.length}명 저장 완료`;
   };
+  function editRow(id){
+    const r = rows.find(x=>x.id===id); if(!r) return;
+    $("gMonth").value = r.month;   // 그 달을 입력 그리드로 → 기존 값 자동 표시
+    buildGrid();
+    window.scrollTo({ top:0, behavior:"smooth" });
+    $("formMsg").className="formmsg ok";
+    $("formMsg").textContent = `${r.month} 실적을 위 입력표에서 수정한 뒤 '전체 저장'을 눌러주세요. (${esc(r.designer)} 포함)`;
+  }
   async function delRow(id){
     const r = rows.find(x=>x.id===id); if(!r) return;
     if(!confirm(`${r.month} · ${r.designer} 실적을 삭제할까요?\n삭제하면 복구할 수 없습니다.`)) return;
@@ -345,6 +353,7 @@
         <td class="num">${num(r.new_count)}</td>
         <td class="num">${num(r.return_count)}</td>
         <td style="text-align:right">
+          <button class="rowbtn" onclick="editRow(${r.id})">수정</button>
           <button class="rowbtn del" onclick="delRow(${r.id})">삭제</button>
         </td>
       </tr>`).join("");
