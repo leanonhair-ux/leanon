@@ -130,9 +130,17 @@
   .dash-section svg{width:100%; height:auto; display:block}
   #dashTrendGrid{grid-template-columns:repeat(auto-fit, minmax(460px, 1fr)); gap:26px 30px}
   @media(max-width:520px){ #dashTrendGrid{grid-template-columns:1fr} }
-  .charttip{position:fixed; z-index:60; background:#1c1a17; color:#fff; font-size:12.5px; font-weight:700;
+  .charttip{position:fixed; z-index:120; background:#1c1a17; color:#fff; font-size:12.5px; font-weight:700;
             padding:7px 10px; border-radius:8px; pointer-events:none; white-space:nowrap;
             transform:translate(-50%,-100%); box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  #dashTrendGrid>.dash-section, #dashMonthGrid>.dash-section{cursor:zoom-in; border-radius:10px; transition:background .12s}
+  #dashTrendGrid>.dash-section:hover, #dashMonthGrid>.dash-section:hover{background:var(--card)}
+  .cmodal{position:fixed; inset:0; z-index:100; background:rgba(18,28,22,.55); display:flex; align-items:center; justify-content:center; padding:16px}
+  .cmodal[hidden]{display:none}
+  .cmodal-panel{background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px; max-width:960px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 24px 70px rgba(0,0,0,.3); position:relative}
+  .cmodal-x{position:absolute; top:12px; right:12px; border:1px solid var(--line); background:#fff; border-radius:9px; width:36px; height:36px; font-size:16px; cursor:pointer; font-family:inherit; color:var(--ink)}
+  .cmodal .dash-sectitle{font-size:17px; margin-bottom:14px; padding-right:40px}
+  .cmodal svg{width:100%; height:auto}
   .legend{display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:12px}
   .legend .lg{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700}
   .legend .lg i{width:16px; height:3px; border-radius:2px; display:inline-block}
@@ -245,6 +253,14 @@
     <div class="dash-grid" id="dashTrendGrid"></div>
     <div id="chartTip" class="charttip" style="display:none"></div>
   </div>
+
+  <!-- 그래프 확대 모달 -->
+  <div id="chartModal" class="cmodal" hidden>
+    <div class="cmodal-panel" role="dialog" aria-modal="true" aria-label="그래프 확대">
+      <button class="cmodal-x" id="cmodalX" aria-label="닫기">✕</button>
+      <div id="chartModalBody"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -345,6 +361,33 @@
       else { tip.style.display="none"; }
     });
     grid.addEventListener("pointerleave", () => { tip.style.display="none"; });
+  })();
+
+  /* ── 그래프 클릭 → 확대 모달 ── */
+  function openChartModal(section){
+    $("chartModalBody").innerHTML = `<div class="dash-section">${section.innerHTML}</div>`;
+    $("chartModal").hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function closeChartModal(){ $("chartModal").hidden = true; document.body.style.overflow = ""; $("chartTip").style.display="none"; }
+  ["dashTrendGrid","dashMonthGrid"].forEach(id => {
+    $(id).addEventListener("click", e => {
+      const sec = e.target.closest(".dash-section");
+      if(sec && $(id).contains(sec)) openChartModal(sec);
+    });
+  });
+  $("cmodalX").onclick = closeChartModal;
+  $("chartModal").addEventListener("click", e => { if(e.target===$("chartModal")) closeChartModal(); });
+  document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("chartModal").hidden) closeChartModal(); });
+  // 모달 안에서도 점 호버 툴팁
+  (function(){
+    const tip=$("chartTip"), body=$("chartModalBody");
+    body.addEventListener("pointermove", e => {
+      const lab = e.target && e.target.getAttribute && e.target.getAttribute("data-tip");
+      if(lab){ tip.textContent=lab; tip.style.left=e.clientX+"px"; tip.style.top=(e.clientY-14)+"px"; tip.style.display=""; }
+      else { tip.style.display="none"; }
+    });
+    body.addEventListener("pointerleave", () => { tip.style.display="none"; });
   })();
 
   /* ── 데이터 로드 ── */
