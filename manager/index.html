@@ -56,7 +56,14 @@
   .btn-cancel{border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:12px 18px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit}
   .formmsg{font-size:13px; margin-top:10px; min-height:16px}
   .formmsg.ok{color:#2f9e58} .formmsg.err{color:#c0392b}
-  @media(max-width:860px){ .mform{grid-template-columns:repeat(3,1fr)} }
+  .gridscroll{overflow-x:auto; margin-top:14px}
+  table.gridtable{width:100%; border-collapse:collapse; min-width:560px}
+  table.gridtable th, table.gridtable td{padding:9px 8px; border-bottom:1px solid var(--line); text-align:right}
+  table.gridtable th{font-size:12px; color:var(--muted); font-weight:700}
+  table.gridtable th.l, table.gridtable td.l{text-align:left}
+  .gin{width:120px; border:1px solid var(--line); border-radius:8px; padding:10px 8px; font-size:14px; font-family:inherit; text-align:right; background:#fff; color:var(--ink); font-variant-numeric:tabular-nums}
+  .gin:focus{outline:2px solid var(--accent); outline-offset:-1px}
+  @media(max-width:860px){ .mform{grid-template-columns:repeat(3,1fr)} .gin{width:92px} }
   @media(max-width:520px){ .mform{grid-template-columns:repeat(2,1fr)} }
 
   /* 필터 */
@@ -134,19 +141,15 @@
   <!-- 입력 · 목록 -->
   <div id="manageView" class="wrap">
     <div class="formcard">
-      <h2>월별 실적 입력 <span class="editing" id="editingTag"></span></h2>
-      <div class="mform">
-        <div class="mfield"><label>월</label><input type="month" id="fMonth" /></div>
-        <div class="mfield"><label>디자이너</label><select id="fDesigner"></select></div>
-        <div class="mfield"><label>매출 (원)</label><input type="number" id="fRevenue" min="0" step="1000" inputmode="numeric" placeholder="0" /></div>
-        <div class="mfield"><label>st수</label><input type="number" id="fSt" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
-        <div class="mfield"><label>신규수</label><input type="number" id="fNew" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
-        <div class="mfield"><label>재방고객수</label><input type="number" id="fReturn" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
+      <h2>월별 실적 입력 <span style="font-weight:600;color:var(--muted);font-size:12px">· 디자이너 전체 한 번에 저장 (기존 값 자동 표시)</span></h2>
+      <div class="mfield" style="max-width:220px"><label>월</label><input type="month" id="gMonth" /></div>
+      <div class="gridscroll">
+        <table class="gridtable">
+          <thead><tr><th class="l">디자이너</th><th>매출 (원)</th><th>st수</th><th>신규수</th><th>재방고객수</th></tr></thead>
+          <tbody id="gridBody"></tbody>
+        </table>
       </div>
-      <div class="formbtns">
-        <button class="btn-save" id="saveBtn">저장</button>
-        <button class="btn-cancel" id="cancelBtn" style="display:none">취소</button>
-      </div>
+      <div class="formbtns"><button class="btn-save" id="saveAllBtn">전체 저장</button></div>
       <div class="formmsg" id="formMsg"></div>
     </div>
 
@@ -195,6 +198,7 @@
   const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
   const DESIGNERS = ["정소현", "이하늘", "장영원", "조예진", "전영주", "천예은", "오기쁨"];
+  const INPUT_DESIGNERS = DESIGNERS.filter(d => d !== "정소현");  // 실적 입력 대상 (대표원장 제외)
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = id => document.getElementById(id);
   const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -203,7 +207,6 @@
 
   let rows = [];
   let view = "manage";
-  let editingId = null;
 
   /* ── 인증 (상담 관리와 동일 계정) ── */
   const CRED_KEY = "leanon_admin_cred", LOGOUT_KEY = "leanon_admin_logout";
@@ -256,14 +259,14 @@
 
   /* ── 셀렉터 초기화 ── */
   function setupSelectors(){
-    const dOpts = DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
-    $("fDesigner").innerHTML = dOpts;
+    const dOpts = INPUT_DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
     $("filterDesigner").innerHTML = `<option value="">전체</option>` + dOpts;
     $("dashDesigner").innerHTML = dOpts;
     // 기본 월 = 이번 달
     const now = new Date();
-    $("fMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    $("gMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   }
+  $("gMonth").onchange = buildGrid;
   $("filterMonth").onchange = render;
   $("filterDesigner").onchange = render;
   $("dashMonth").onchange = renderDash;
@@ -278,44 +281,43 @@
     const months = [...new Set(rows.map(r=>r.month))].sort().reverse();
     $("filterMonth").innerHTML = `<option value="">전체</option>` + months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
     $("dashMonth").innerHTML = months.length ? months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("") : `<option value="">(데이터 없음)</option>`;
+    buildGrid();
     render();
   }
 
-  /* ── 저장 (월+디자이너 중복 시 덮어쓰기) ── */
-  $("saveBtn").onclick = async () => {
-    const month=$("fMonth").value, designer=$("fDesigner").value;
-    if(!month){ formErr("월을 선택해 주세요."); return; }
-    if(!designer){ formErr("디자이너를 선택해 주세요."); return; }
-    const payload = {
-      month, designer,
-      revenue: Number($("fRevenue").value||0),
-      st_count: Number($("fSt").value||0),
-      new_count: Number($("fNew").value||0),
-      return_count: Number($("fReturn").value||0)
-    };
-    $("saveBtn").disabled=true; $("saveBtn").textContent="저장 중...";
-    const { error } = await sb.from("manager_stats").upsert(payload, { onConflict:"month,designer" });
-    $("saveBtn").disabled=false; $("saveBtn").textContent="저장";
-    if(error){ formErr("저장 오류: "+error.message); return; }
-    $("formMsg").className="formmsg ok"; $("formMsg").textContent = `${month} · ${designer} 저장 완료`;
-    resetForm();
-    await load();
-  };
-  $("cancelBtn").onclick = resetForm;
+  /* ── 입력 그리드 (선택 월의 모든 디자이너 한 화면 · 기존값 자동표시) ── */
+  function buildGrid(){
+    const m = $("gMonth").value;
+    const existing = {};
+    rows.filter(r=>r.month===m).forEach(r=>existing[r.designer]=r);
+    $("gridBody").innerHTML = INPUT_DESIGNERS.map(d=>{
+      const e = existing[d] || {};
+      const cell = (f,step)=>`<td><input type="number" class="gin" data-d="${esc(d)}" data-f="${f}" min="0" step="${step}" inputmode="numeric" value="${e[f]!=null?e[f]:''}" placeholder="0" /></td>`;
+      return `<tr><td class="l" style="font-weight:700">${esc(d)}</td>${cell('revenue',1000)}${cell('st_count',1)}${cell('new_count',1)}${cell('return_count',1)}</tr>`;
+    }).join("");
+  }
   function formErr(m){ $("formMsg").className="formmsg err"; $("formMsg").textContent=m; }
-  function resetForm(){
-    editingId=null; $("editingTag").textContent=""; $("cancelBtn").style.display="none";
-    ["fRevenue","fSt","fNew","fReturn"].forEach(id=>$(id).value="");
-  }
 
-  function editRow(id){
-    const r = rows.find(x=>x.id===id); if(!r) return;
-    $("fMonth").value=r.month; $("fDesigner").value=r.designer;
-    $("fRevenue").value=r.revenue; $("fSt").value=r.st_count; $("fNew").value=r.new_count; $("fReturn").value=r.return_count;
-    editingId=id; $("editingTag").textContent=`· ${r.month} ${r.designer} 수정 중 (저장 시 덮어쓰기)`;
-    $("cancelBtn").style.display="";
-    $("formMsg").textContent=""; window.scrollTo({top:0, behavior:"smooth"});
-  }
+  /* ── 전체 저장 (월+디자이너 중복 시 덮어쓰기, 값 입력된 디자이너만) ── */
+  $("saveAllBtn").onclick = async () => {
+    const month = $("gMonth").value;
+    if(!month){ formErr("월을 선택해 주세요."); return; }
+    const map = {};
+    document.querySelectorAll("#gridBody .gin").forEach(inp=>{
+      const d=inp.dataset.d, f=inp.dataset.f;
+      (map[d] = map[d] || {revenue:0,st_count:0,new_count:0,return_count:0})[f] = Number(inp.value||0);
+    });
+    const payload = Object.entries(map)
+      .filter(([,o]) => o.revenue||o.st_count||o.new_count||o.return_count)
+      .map(([d,o]) => ({ month, designer:d, ...o }));
+    if(!payload.length){ formErr("입력된 값이 없어요. 숫자를 입력해 주세요."); return; }
+    $("saveAllBtn").disabled=true; $("saveAllBtn").textContent="저장 중...";
+    const { error } = await sb.from("manager_stats").upsert(payload, { onConflict:"month,designer" });
+    $("saveAllBtn").disabled=false; $("saveAllBtn").textContent="전체 저장";
+    if(error){ formErr("저장 오류: "+error.message); return; }
+    await load();
+    $("formMsg").className="formmsg ok"; $("formMsg").textContent = `${month} · ${payload.length}명 저장 완료`;
+  };
   async function delRow(id){
     const r = rows.find(x=>x.id===id); if(!r) return;
     if(!confirm(`${r.month} · ${r.designer} 실적을 삭제할까요?\n삭제하면 복구할 수 없습니다.`)) return;
@@ -343,7 +345,6 @@
         <td class="num">${num(r.new_count)}</td>
         <td class="num">${num(r.return_count)}</td>
         <td style="text-align:right">
-          <button class="rowbtn" onclick="editRow(${r.id})">수정</button>
           <button class="rowbtn del" onclick="delRow(${r.id})">삭제</button>
         </td>
       </tr>`).join("");
@@ -380,7 +381,7 @@
         <div class="kpi"><div class="l">총 신규</div><div class="v">${num(kpi.nw)}</div></div>
         <div class="kpi"><div class="l">총 재방</div><div class="v">${num(kpi.rt)}</div></div>`;
       const byDes = name => monthRows.filter(r=>r.designer===name);
-      const present = DESIGNERS.filter(d=>byDes(d).length);
+      const present = INPUT_DESIGNERS.filter(d=>byDes(d).length);
       const mk = (f)=> present.map(d=>({name:d, v: byDes(d).reduce((s,r)=>s+ +f(r),0)})).sort((a,b)=>b.v-a.v);
       $("dashMonthGrid").innerHTML =
         barBlock(`디자이너별 매출 · ${dm}`, mk(r=>r.revenue), won) +
