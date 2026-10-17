@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>LEANON 실적 관리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ color-scheme:light; --ink:#1c1a17; --muted:#8a8377; --line:#e6e1d9; --bg:#ffffff; --card:#f6f1ea; --radius:14px; --accent:#2f6bd0; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+       background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased}
+
+  /* 로그인 */
+  #loginView{max-width:360px; margin:0 auto; padding:110px 24px}
+  #loginView h1{font-size:26px; letter-spacing:5px; text-align:center; margin-bottom:6px}
+  .loginlogo{width:160px; max-width:62%; height:auto; display:block; margin:0 auto 10px}
+  #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:32px}
+  #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
+       padding:14px; font-size:16px; margin-bottom:10px; font-family:inherit}
+  #loginView button{width:100%; border:none; border-radius:10px; background:var(--ink); color:#fff;
+       font-size:15px; font-weight:700; padding:15px; margin-top:6px; cursor:pointer}
+  #loginErr{color:#c0392b; font-size:13px; text-align:center; margin-top:12px; min-height:18px}
+  .remember{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--muted); margin-top:12px; cursor:pointer; user-select:none}
+  .remember input{width:auto !important; margin:0 !important; accent-color:var(--ink)}
+
+  /* 앱 */
+  #appView{display:none}
+  .topbar{position:sticky; top:0; z-index:5; background:rgba(255,255,255,.9); backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line); padding:14px 18px; display:flex; align-items:center; gap:12px}
+  .topbar .logo{font-size:18px; letter-spacing:3px; font-weight:800}
+  .topbar .toplogo{height:22px; width:auto; display:block}
+  .topbar .sub{color:var(--muted); font-size:13px}
+  .topbar .spacer{flex:1}
+  .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 12px;
+                 font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap}
+  .viewtoggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .viewtoggle .vbtn{border:none; border-radius:0; background:#fff; padding:8px 13px; font-size:13px; cursor:pointer; font-family:inherit; color:var(--ink)}
+  .viewtoggle .vbtn+.vbtn{border-left:1px solid var(--line)}
+  .viewtoggle .vbtn.active{background:var(--ink); color:#fff}
+
+  .wrap{max-width:1180px; margin:0 auto}
+
+  /* 입력 폼 */
+  .formcard{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin:18px}
+  .formcard h2{font-size:15px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px}
+  .formcard .editing{font-size:12px; color:var(--accent); font-weight:700}
+  .mform{display:grid; grid-template-columns:repeat(6, 1fr); gap:10px}
+  .mfield{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .mfield label{font-size:11.5px; color:var(--muted); font-weight:700}
+  .mfield input, .mfield select{border:1px solid var(--line); border-radius:9px; padding:11px 10px; font-size:14px;
+       font-family:inherit; background:#fff; color:var(--ink); width:100%}
+  .mfield input:focus, .mfield select:focus{outline:2px solid var(--accent); outline-offset:-1px}
+  .formbtns{display:flex; gap:8px; margin-top:14px}
+  .btn-save{border:none; background:var(--ink); color:#fff; border-radius:9px; padding:12px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit}
+  .btn-cancel{border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:9px; padding:12px 18px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit}
+  .formmsg{font-size:13px; margin-top:10px; min-height:16px}
+  .formmsg.ok{color:#2f9e58} .formmsg.err{color:#c0392b}
+  @media(max-width:860px){ .mform{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:520px){ .mform{grid-template-columns:repeat(2,1fr)} }
+
+  /* 필터 */
+  .filterbar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:4px 18px}
+  .filterbar .plabel{font-size:12px; color:var(--muted)}
+  .filterbar select{border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13px; font-family:inherit; background:#fff}
+
+  /* 테이블 */
+  .tablewrap{overflow-x:auto; padding:10px 18px 60px}
+  table.mtable{width:100%; border-collapse:collapse; min-width:720px}
+  table.mtable th, table.mtable td{padding:11px 12px; text-align:right; font-size:14px; border-bottom:1px solid var(--line); white-space:nowrap}
+  table.mtable th{font-size:12px; color:var(--muted); font-weight:700; text-align:right; background:#faf7f2; position:sticky; top:0}
+  table.mtable th.l, table.mtable td.l{text-align:left}
+  table.mtable td.num{font-variant-numeric:tabular-nums}
+  table.mtable tr:hover td{background:#faf7f2}
+  table.mtable tfoot td{font-weight:800; border-top:2px solid var(--line); border-bottom:none; background:#f6f1ea}
+  .rowbtn{border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; margin-left:4px}
+  .rowbtn.del{color:#c0392b; border-color:#ecc}
+  .empty{color:var(--muted); text-align:center; padding:60px 20px; font-size:15px}
+
+  /* 대시보드 */
+  #dashView{display:none; padding:18px 18px 70px; max-width:1180px; margin:0 auto}
+  .dashctl{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px}
+  .dashctl select{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fff; font-weight:700}
+  .dash-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:22px 34px; margin-top:16px}
+  .dash-section{min-width:0}
+  .dash-sectitle{font-size:14px; font-weight:800; margin-bottom:16px}
+  .dash-list{display:flex; flex-direction:column; gap:11px}
+  .dash-row{display:grid; grid-template-columns:70px 1fr 92px; align-items:center; gap:12px}
+  .dash-name{font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .dash-bar{height:24px; background:#efe9e0; border-radius:7px; overflow:hidden}
+  .dash-fill{height:100%; background:var(--ink); border-radius:7px; min-width:2px; transition:width .3s}
+  .dash-num{font-size:14px; font-weight:800; text-align:right; font-variant-numeric:tabular-nums}
+  .dash-empty{color:var(--muted); padding:50px 20px; text-align:center; font-size:15px}
+  .dash-cards{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:6px}
+  .kpi{flex:1; min-width:130px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+  .kpi .l{font-size:12px; color:var(--muted); font-weight:700}
+  .kpi .v{font-size:22px; font-weight:800; margin-top:6px; font-variant-numeric:tabular-nums}
+
+  @media(max-width:600px){
+    .topbar{padding:12px 14px; gap:8px}
+    .topbar .sub{display:none}
+    .formcard{margin:14px}
+    .dash-row{grid-template-columns:62px 1fr 80px}
+  }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginView">
+  <img class="loginlogo" src="../logo.png" alt="LEANON" onerror="this.outerHTML='&lt;h1&gt;LEANON&lt;/h1&gt;'" />
+  <p>실적 관리 · 매니저 전용</p>
+  <input id="email" type="text" placeholder="아이디" autocomplete="username" autocapitalize="none" />
+  <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
+  <label class="remember"><input type="checkbox" id="remember" checked />로그인 정보 저장 · 자동 로그인</label>
+  <button id="loginBtn">로그인</button>
+  <div id="loginErr"></div>
+</div>
+
+<!-- 앱 -->
+<div id="appView">
+  <div class="topbar">
+    <img class="toplogo" src="../logo.png" alt="LEANON" onerror="this.outerHTML='&lt;span class=&quot;logo&quot;&gt;LEANON&lt;/span&gt;'" />
+    <span class="sub">실적 관리</span>
+    <span class="spacer"></span>
+    <div class="viewtoggle">
+      <button class="vbtn active" data-v="manage">입력 · 목록</button>
+      <button class="vbtn" data-v="dash">대시보드</button>
+    </div>
+    <button id="refreshBtn">새로고침</button>
+    <button id="logoutBtn">로그아웃</button>
+  </div>
+
+  <!-- 입력 · 목록 -->
+  <div id="manageView" class="wrap">
+    <div class="formcard">
+      <h2>월별 실적 입력 <span class="editing" id="editingTag"></span></h2>
+      <div class="mform">
+        <div class="mfield"><label>월</label><input type="month" id="fMonth" /></div>
+        <div class="mfield"><label>디자이너</label><select id="fDesigner"></select></div>
+        <div class="mfield"><label>매출 (원)</label><input type="number" id="fRevenue" min="0" step="1000" inputmode="numeric" placeholder="0" /></div>
+        <div class="mfield"><label>st수</label><input type="number" id="fSt" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
+        <div class="mfield"><label>신규수</label><input type="number" id="fNew" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
+        <div class="mfield"><label>재방고객수</label><input type="number" id="fReturn" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
+      </div>
+      <div class="formbtns">
+        <button class="btn-save" id="saveBtn">저장</button>
+        <button class="btn-cancel" id="cancelBtn" style="display:none">취소</button>
+      </div>
+      <div class="formmsg" id="formMsg"></div>
+    </div>
+
+    <div class="filterbar">
+      <span class="plabel">월</span>
+      <select id="filterMonth"><option value="">전체</option></select>
+      <span class="plabel">디자이너</span>
+      <select id="filterDesigner"><option value="">전체</option></select>
+    </div>
+
+    <div class="tablewrap">
+      <table class="mtable" id="mtable">
+        <thead>
+          <tr>
+            <th class="l">월</th><th class="l">디자이너</th>
+            <th>매출</th><th>st수</th><th>신규</th><th>재방</th><th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="mtbody"></tbody>
+        <tfoot id="mtfoot"></tfoot>
+      </table>
+      <div class="empty" id="mEmpty" style="display:none">아직 입력된 실적이 없어요. 위에서 추가해 주세요.</div>
+    </div>
+  </div>
+
+  <!-- 대시보드 -->
+  <div id="dashView">
+    <div class="dashctl">
+      <span class="plabel" style="font-size:13px;color:var(--muted)">월 선택</span>
+      <select id="dashMonth"></select>
+    </div>
+    <div class="dash-cards" id="dashKpi"></div>
+    <div class="dash-grid" id="dashMonthGrid"></div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:30px 0 22px" />
+
+    <div class="dashctl">
+      <span class="plabel" style="font-size:13px;color:var(--muted)">디자이너 선택 (월별 추이 · 면담용)</span>
+      <select id="dashDesigner"></select>
+    </div>
+    <div class="dash-grid" id="dashTrendGrid"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
+  const DESIGNERS = ["정소현", "이하늘", "장영원", "조예진", "전영주", "천예은", "오기쁨"];
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const won = n => Number(n||0).toLocaleString('ko-KR');
+  const num = n => Number(n||0).toLocaleString('ko-KR');
+
+  let rows = [];
+  let view = "manage";
+  let editingId = null;
+
+  /* ── 인증 (상담 관리와 동일 계정) ── */
+  const CRED_KEY = "leanon_admin_cred", LOGOUT_KEY = "leanon_admin_logout";
+  const toEmail = v => { v=(v||"").trim(); return v.includes("@") ? v : v+"@leanon.co.kr"; };
+  function saveCreds(id,pw){ try{ localStorage.setItem(CRED_KEY, btoa(unescape(encodeURIComponent(JSON.stringify({id,pw}))))); }catch(_){} }
+  function loadCreds(){ try{ const s=localStorage.getItem(CRED_KEY); return s?JSON.parse(decodeURIComponent(escape(atob(s)))):null; }catch(_){ return null; } }
+  function clearCreds(){ try{ localStorage.removeItem(CRED_KEY); }catch(_){} }
+  function setLogoutFlag(){ try{ localStorage.setItem(LOGOUT_KEY,"1"); }catch(_){} }
+  function clearLogoutFlag(){ try{ localStorage.removeItem(LOGOUT_KEY); }catch(_){} }
+  function loggedOut(){ try{ return localStorage.getItem(LOGOUT_KEY)==="1"; }catch(_){ return false; } }
+  async function doLogin(id,pw){ return await sb.auth.signInWithPassword({ email:toEmail(id), password:pw }); }
+
+  async function init(){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){ showApp(); return; }
+    const saved = loadCreds();
+    if(saved && saved.id){
+      $("email").value=saved.id; $("password").value=saved.pw||""; $("remember").checked=true;
+      if(!loggedOut()){ const { error } = await doLogin(saved.id, saved.pw); if(!error){ showApp(); return; } clearCreds(); }
+    }
+    clearLogoutFlag(); showLogin();
+  }
+  function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; setupSelectors(); load(); }
+
+  $("loginBtn").onclick = async () => {
+    $("loginErr").textContent="";
+    const id=$("email").value.trim(), pw=$("password").value;
+    const { error } = await doLogin(id, pw);
+    if(error){ $("loginErr").textContent="로그인 실패: 아이디/비밀번호를 확인해 주세요."; return; }
+    if($("remember").checked) saveCreds(id,pw); else clearCreds();
+    clearLogoutFlag(); showApp();
+  };
+  $("password").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+  $("logoutBtn").onclick = async () => {
+    setLogoutFlag(); await sb.auth.signOut();
+    const saved=loadCreds(); if(saved&&saved.id){ $("email").value=saved.id; $("password").value=saved.pw||""; $("remember").checked=true; }
+    showLogin();
+  };
+  $("refreshBtn").onclick = () => load();
+
+  /* ── 뷰 전환 ── */
+  document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.onclick = () => {
+    view = b.dataset.v;
+    document.querySelectorAll(".viewtoggle .vbtn").forEach(x => x.classList.toggle("active", x.dataset.v===view));
+    $("manageView").style.display = view==="manage" ? "" : "none";
+    $("dashView").style.display = view==="dash" ? "block" : "none";
+    render();
+  });
+
+  /* ── 셀렉터 초기화 ── */
+  function setupSelectors(){
+    const dOpts = DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
+    $("fDesigner").innerHTML = dOpts;
+    $("filterDesigner").innerHTML = `<option value="">전체</option>` + dOpts;
+    $("dashDesigner").innerHTML = dOpts;
+    // 기본 월 = 이번 달
+    const now = new Date();
+    $("fMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  }
+  $("filterMonth").onchange = render;
+  $("filterDesigner").onchange = render;
+  $("dashMonth").onchange = renderDash;
+  $("dashDesigner").onchange = renderDash;
+
+  /* ── 데이터 로드 ── */
+  async function load(){
+    const { data, error } = await sb.from("manager_stats").select("*").order("month",{ascending:false}).order("designer");
+    if(error){ $("formMsg").className="formmsg err"; $("formMsg").textContent="불러오기 오류: "+error.message; return; }
+    rows = data || [];
+    // 월 필터 옵션 채우기
+    const months = [...new Set(rows.map(r=>r.month))].sort().reverse();
+    $("filterMonth").innerHTML = `<option value="">전체</option>` + months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
+    $("dashMonth").innerHTML = months.length ? months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("") : `<option value="">(데이터 없음)</option>`;
+    render();
+  }
+
+  /* ── 저장 (월+디자이너 중복 시 덮어쓰기) ── */
+  $("saveBtn").onclick = async () => {
+    const month=$("fMonth").value, designer=$("fDesigner").value;
+    if(!month){ formErr("월을 선택해 주세요."); return; }
+    if(!designer){ formErr("디자이너를 선택해 주세요."); return; }
+    const payload = {
+      month, designer,
+      revenue: Number($("fRevenue").value||0),
+      st_count: Number($("fSt").value||0),
+      new_count: Number($("fNew").value||0),
+      return_count: Number($("fReturn").value||0)
+    };
+    $("saveBtn").disabled=true; $("saveBtn").textContent="저장 중...";
+    const { error } = await sb.from("manager_stats").upsert(payload, { onConflict:"month,designer" });
+    $("saveBtn").disabled=false; $("saveBtn").textContent="저장";
+    if(error){ formErr("저장 오류: "+error.message); return; }
+    $("formMsg").className="formmsg ok"; $("formMsg").textContent = `${month} · ${designer} 저장 완료`;
+    resetForm();
+    await load();
+  };
+  $("cancelBtn").onclick = resetForm;
+  function formErr(m){ $("formMsg").className="formmsg err"; $("formMsg").textContent=m; }
+  function resetForm(){
+    editingId=null; $("editingTag").textContent=""; $("cancelBtn").style.display="none";
+    ["fRevenue","fSt","fNew","fReturn"].forEach(id=>$(id).value="");
+  }
+
+  function editRow(id){
+    const r = rows.find(x=>x.id===id); if(!r) return;
+    $("fMonth").value=r.month; $("fDesigner").value=r.designer;
+    $("fRevenue").value=r.revenue; $("fSt").value=r.st_count; $("fNew").value=r.new_count; $("fReturn").value=r.return_count;
+    editingId=id; $("editingTag").textContent=`· ${r.month} ${r.designer} 수정 중 (저장 시 덮어쓰기)`;
+    $("cancelBtn").style.display="";
+    $("formMsg").textContent=""; window.scrollTo({top:0, behavior:"smooth"});
+  }
+  async function delRow(id){
+    const r = rows.find(x=>x.id===id); if(!r) return;
+    if(!confirm(`${r.month} · ${r.designer} 실적을 삭제할까요?\n삭제하면 복구할 수 없습니다.`)) return;
+    const { error } = await sb.from("manager_stats").delete().eq("id", id);
+    if(error){ alert("삭제 오류: "+error.message); return; }
+    await load();
+  }
+
+  /* ── 렌더 ── */
+  function render(){
+    if(view==="dash"){ renderDash(); return; }
+    const fm=$("filterMonth").value, fd=$("filterDesigner").value;
+    let list = rows.slice();
+    if(fm) list = list.filter(r=>r.month===fm);
+    if(fd) list = list.filter(r=>r.designer===fd);
+    const tb=$("mtbody");
+    if(!list.length){ tb.innerHTML=""; $("mtfoot").innerHTML=""; $("mEmpty").style.display=""; return; }
+    $("mEmpty").style.display="none";
+    tb.innerHTML = list.map(r=>`
+      <tr>
+        <td class="l">${esc(r.month)}</td>
+        <td class="l">${esc(r.designer)}</td>
+        <td class="num">${won(r.revenue)}</td>
+        <td class="num">${num(r.st_count)}</td>
+        <td class="num">${num(r.new_count)}</td>
+        <td class="num">${num(r.return_count)}</td>
+        <td style="text-align:right">
+          <button class="rowbtn" onclick="editRow(${r.id})">수정</button>
+          <button class="rowbtn del" onclick="delRow(${r.id})">삭제</button>
+        </td>
+      </tr>`).join("");
+    const sum = list.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
+    $("mtfoot").innerHTML = `<tr>
+      <td class="l">합계</td><td class="l">${list.length}건</td>
+      <td class="num">${won(sum.rev)}</td><td class="num">${num(sum.st)}</td>
+      <td class="num">${num(sum.nw)}</td><td class="num">${num(sum.rt)}</td><td></td></tr>`;
+  }
+
+  /* ── 대시보드 ── */
+  function barBlock(title, items, fmt){
+    const max = Math.max(1, ...items.map(i=>i.v));
+    const body = items.map(i=>`
+      <div class="dash-row">
+        <div class="dash-name">${esc(i.name)}</div>
+        <div class="dash-bar"><div class="dash-fill" style="width:${(i.v/max*100).toFixed(1)}%"></div></div>
+        <div class="dash-num">${fmt(i.v)}</div>
+      </div>`).join("");
+    return `<div class="dash-section"><div class="dash-sectitle">${esc(title)}</div><div class="dash-list">${body}</div></div>`;
+  }
+
+  function renderDash(){
+    // 1) 선택 월 · 디자이너별 비교
+    const dm = $("dashMonth").value;
+    const monthRows = rows.filter(r=>r.month===dm);
+    const kpi = monthRows.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
+    if(!dm || !monthRows.length){
+      $("dashKpi").innerHTML=""; $("dashMonthGrid").innerHTML=`<div class="dash-empty">${dm?`${esc(dm)} 데이터가 없어요.`:"입력된 데이터가 없어요."}</div>`;
+    } else {
+      $("dashKpi").innerHTML = `
+        <div class="kpi"><div class="l">${esc(dm)} 총매출</div><div class="v">${won(kpi.rev)}<span style="font-size:13px;font-weight:600"> 원</span></div></div>
+        <div class="kpi"><div class="l">총 st수</div><div class="v">${num(kpi.st)}</div></div>
+        <div class="kpi"><div class="l">총 신규</div><div class="v">${num(kpi.nw)}</div></div>
+        <div class="kpi"><div class="l">총 재방</div><div class="v">${num(kpi.rt)}</div></div>`;
+      const byDes = name => monthRows.filter(r=>r.designer===name);
+      const present = DESIGNERS.filter(d=>byDes(d).length);
+      const mk = (f)=> present.map(d=>({name:d, v: byDes(d).reduce((s,r)=>s+ +f(r),0)})).sort((a,b)=>b.v-a.v);
+      $("dashMonthGrid").innerHTML =
+        barBlock(`디자이너별 매출 · ${dm}`, mk(r=>r.revenue), won) +
+        barBlock(`디자이너별 신규 · ${dm}`, mk(r=>r.new_count), num) +
+        barBlock(`디자이너별 재방 · ${dm}`, mk(r=>r.return_count), num) +
+        barBlock(`디자이너별 st수 · ${dm}`, mk(r=>r.st_count), num);
+    }
+
+    // 2) 선택 디자이너 · 월별 추이 (면담용)
+    const dd = $("dashDesigner").value;
+    const desRows = rows.filter(r=>r.designer===dd).slice().sort((a,b)=>a.month<b.month?-1:1);
+    if(!dd || !desRows.length){
+      $("dashTrendGrid").innerHTML=`<div class="dash-empty">${dd?`${esc(dd)} 데이터가 없어요.`:"디자이너를 선택하세요."}</div>`;
+    } else {
+      const trend = (f)=> desRows.map(r=>({name:r.month, v:+f(r)}));
+      $("dashTrendGrid").innerHTML =
+        barBlock(`${dd} · 월별 매출`, trend(r=>r.revenue), won) +
+        barBlock(`${dd} · 월별 신규`, trend(r=>r.new_count), num) +
+        barBlock(`${dd} · 월별 재방`, trend(r=>r.return_count), num) +
+        barBlock(`${dd} · 월별 st수`, trend(r=>r.st_count), num);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
