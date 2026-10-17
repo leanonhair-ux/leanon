@@ -63,6 +63,11 @@
   table.gridtable th.l, table.gridtable td.l{text-align:left}
   .gin{width:120px; border:1px solid var(--line); border-radius:8px; padding:10px 8px; font-size:14px; font-family:inherit; text-align:right; background:#fff; color:var(--ink); font-variant-numeric:tabular-nums}
   .gin:focus{outline:2px solid var(--accent); outline-offset:-1px}
+  .formbtns{align-items:center}
+  .dirtytag{color:#c0392b; font-size:13px; font-weight:700}
+  .btn-save.dirty{background:#c0392b}
+  @media (prefers-reduced-motion:no-preference){ .btn-save.dirty{animation:savepulse 1.3s ease-in-out infinite} }
+  @keyframes savepulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.45)} 50%{box-shadow:0 0 0 7px rgba(192,57,43,0)}}
   @media(max-width:860px){ .mform{grid-template-columns:repeat(3,1fr)} .gin{width:92px} }
   @media(max-width:520px){ .mform{grid-template-columns:repeat(2,1fr)} }
 
@@ -149,7 +154,10 @@
           <tbody id="gridBody"></tbody>
         </table>
       </div>
-      <div class="formbtns"><button class="btn-save" id="saveAllBtn">전체 저장</button></div>
+      <div class="formbtns">
+        <button class="btn-save" id="saveAllBtn">전체 저장</button>
+        <span class="dirtytag" id="dirtyTag" style="display:none">● 저장되지 않은 변경사항이 있어요 — '전체 저장'을 눌러주세요</span>
+      </div>
       <div class="formmsg" id="formMsg"></div>
     </div>
 
@@ -267,6 +275,7 @@
     $("gMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   }
   $("gMonth").onchange = buildGrid;
+  $("gridBody").addEventListener("input", markDirty);   // 값 수정 시 저장 필요 알림
   $("filterMonth").onchange = render;
   $("filterDesigner").onchange = render;
   $("dashMonth").onchange = renderDash;
@@ -295,8 +304,12 @@
       const cell = (f,step)=>`<td><input type="number" class="gin" data-d="${esc(d)}" data-f="${f}" min="0" step="${step}" inputmode="numeric" value="${e[f]!=null?e[f]:''}" placeholder="0" /></td>`;
       return `<tr><td class="l" style="font-weight:700">${esc(d)}</td>${cell('revenue',1000)}${cell('st_count',1)}${cell('new_count',1)}${cell('return_count',1)}</tr>`;
     }).join("");
+    clearDirty();   // 새로 불러온 상태 = 변경 없음
   }
   function formErr(m){ $("formMsg").className="formmsg err"; $("formMsg").textContent=m; }
+  // 변경사항 인지: 그리드 값을 고치면 저장 필요 알림 + 저장버튼 강조
+  function markDirty(){ $("dirtyTag").style.display=""; $("saveAllBtn").classList.add("dirty"); $("formMsg").textContent=""; }
+  function clearDirty(){ $("dirtyTag").style.display="none"; $("saveAllBtn").classList.remove("dirty"); }
 
   /* ── 전체 저장 (월+디자이너 중복 시 덮어쓰기, 값 입력된 디자이너만) ── */
   $("saveAllBtn").onclick = async () => {
@@ -318,14 +331,6 @@
     await load();
     $("formMsg").className="formmsg ok"; $("formMsg").textContent = `${month} · ${payload.length}명 저장 완료`;
   };
-  function editRow(id){
-    const r = rows.find(x=>x.id===id); if(!r) return;
-    $("gMonth").value = r.month;   // 그 달을 입력 그리드로 → 기존 값 자동 표시
-    buildGrid();
-    window.scrollTo({ top:0, behavior:"smooth" });
-    $("formMsg").className="formmsg ok";
-    $("formMsg").textContent = `${r.month} 실적을 위 입력표에서 수정한 뒤 '전체 저장'을 눌러주세요. (${esc(r.designer)} 포함)`;
-  }
   async function delRow(id){
     const r = rows.find(x=>x.id===id); if(!r) return;
     if(!confirm(`${r.month} · ${r.designer} 실적을 삭제할까요?\n삭제하면 복구할 수 없습니다.`)) return;
@@ -353,7 +358,6 @@
         <td class="num">${num(r.new_count)}</td>
         <td class="num">${num(r.return_count)}</td>
         <td style="text-align:right">
-          <button class="rowbtn" onclick="editRow(${r.id})">수정</button>
           <button class="rowbtn del" onclick="delRow(${r.id})">삭제</button>
         </td>
       </tr>`).join("");
