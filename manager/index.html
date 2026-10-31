@@ -91,7 +91,7 @@
 
   /* 테이블 */
   .tablewrap{overflow-x:auto; padding:10px 18px 60px}
-  table.mtable{width:100%; border-collapse:collapse; min-width:720px}
+  table.mtable{width:100%; border-collapse:collapse; min-width:880px}
   table.mtable th, table.mtable td{padding:11px 12px; text-align:right; font-size:14px; border-bottom:1px solid var(--line); white-space:nowrap}
   table.mtable th{font-size:12px; color:var(--muted); font-weight:700; text-align:right; background:#faf7f2; position:sticky; top:0}
   table.mtable th.l, table.mtable td.l{text-align:left}
@@ -220,7 +220,7 @@
           <tr>
             <th style="width:36px;text-align:center"><input type="checkbox" id="chkAll" /></th>
             <th class="l">월</th><th class="l">디자이너</th>
-            <th>매출</th><th>st수</th><th>신규</th><th>재방</th><th>관리</th>
+            <th>매출</th><th>st수</th><th>신규</th><th>재방</th><th>총고객수</th><th>객단가</th><th>관리</th>
           </tr>
         </thead>
         <tbody id="mtbody"></tbody>
@@ -488,7 +488,10 @@
     const tb=$("mtbody");
     if(!list.length){ tb.innerHTML=""; $("mtfoot").innerHTML=""; $("mEmpty").style.display=""; updateDelBtn(); return; }
     $("mEmpty").style.display="none";
-    tb.innerHTML = list.map(r=>`
+    tb.innerHTML = list.map(r=>{
+      const cust = (+r.new_count||0) + (+r.return_count||0);
+      const aov = cust>0 ? Math.round((+r.revenue||0)/cust) : 0;
+      return `
       <tr>
         <td style="text-align:center"><input type="checkbox" class="rowchk" data-id="${r.id}" /></td>
         <td class="l">${esc(r.month)}</td>
@@ -497,15 +500,21 @@
         <td class="num">${num(r.st_count)}</td>
         <td class="num">${num(r.new_count)}</td>
         <td class="num">${num(r.return_count)}</td>
+        <td class="num">${num(cust)}</td>
+        <td class="num">${won(aov)}</td>
         <td style="text-align:right">
           <button class="rowbtn del" onclick="delRow(${r.id})">삭제</button>
         </td>
-      </tr>`).join("");
+      </tr>`;
+    }).join("");
     const sum = list.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
+    const sumCust = sum.nw + sum.rt;
+    const sumAov = sumCust>0 ? Math.round(sum.rev/sumCust) : 0;
     $("mtfoot").innerHTML = `<tr>
       <td></td><td class="l">합계</td><td class="l">${list.length}건</td>
       <td class="num">${won(sum.rev)}</td><td class="num">${num(sum.st)}</td>
-      <td class="num">${num(sum.nw)}</td><td class="num">${num(sum.rt)}</td><td></td></tr>`;
+      <td class="num">${num(sum.nw)}</td><td class="num">${num(sum.rt)}</td>
+      <td class="num">${num(sumCust)}</td><td class="num">${won(sumAov)}</td><td></td></tr>`;
     updateDelBtn();
   }
 
@@ -587,8 +596,12 @@
 
     // KPI (기간 합계)
     const k = rangeRows.reduce((a,r)=>({rev:a.rev+ +r.revenue, st:a.st+ +r.st_count, nw:a.nw+ +r.new_count, rt:a.rt+ +r.return_count}),{rev:0,st:0,nw:0,rt:0});
+    const kCust = k.nw + k.rt;                                  // 총고객수 = 신규 + 재방
+    const kAov = kCust>0 ? Math.round(k.rev / kCust) : 0;        // 인당 객단가 = 매출 / 총고객수
     $("dashKpi").innerHTML = `
       <div class="kpi"><div class="l">${esc(rangeLbl)} 총매출</div><div class="v">${won(k.rev)}<span style="font-size:13px;font-weight:600"> 원</span></div></div>
+      <div class="kpi"><div class="l">총 고객수</div><div class="v">${num(kCust)}</div></div>
+      <div class="kpi"><div class="l">인당 객단가</div><div class="v">${won(kAov)}<span style="font-size:13px;font-weight:600"> 원</span></div></div>
       <div class="kpi"><div class="l">총 st수</div><div class="v">${num(k.st)}</div></div>
       <div class="kpi"><div class="l">총 신규</div><div class="v">${num(k.nw)}</div></div>
       <div class="kpi"><div class="l">총 재방</div><div class="v">${num(k.rt)}</div></div>`;
@@ -598,21 +611,29 @@
 
     // 1) 디자이너별 비교 (기간 합계 막대)
     const sumBy=(d,f)=> rangeRows.filter(r=>r.designer===d).reduce((s,r)=>s+ +r[f],0);
-    const mk=f=> sel.map(d=>({name:d, v:sumBy(d,f)})).sort((a,b)=>b.v-a.v);
+    const custBy=d=> sumBy(d,'new_count')+sumBy(d,'return_count');
+    const aovBy=d=>{ const c=custBy(d); return c>0?Math.round(sumBy(d,'revenue')/c):0; };
+    const mkv=valFn=> sel.map(d=>({name:d, v:valFn(d)})).sort((a,b)=>b.v-a.v);
     $("dashMonthGrid").innerHTML =
-      barBlock('디자이너별 매출 · 기간합계', mk('revenue'), won) +
-      barBlock('디자이너별 신규 · 기간합계', mk('new_count'), num) +
-      barBlock('디자이너별 재방 · 기간합계', mk('return_count'), num) +
-      barBlock('디자이너별 st수 · 기간합계', mk('st_count'), num);
+      barBlock('디자이너별 매출 · 기간합계', mkv(d=>sumBy(d,'revenue')), won) +
+      barBlock('디자이너별 총고객수 · 기간합계', mkv(custBy), num) +
+      barBlock('디자이너별 인당 객단가', mkv(aovBy), won) +
+      barBlock('디자이너별 신규 · 기간합계', mkv(d=>sumBy(d,'new_count')), num) +
+      barBlock('디자이너별 재방 · 기간합계', mkv(d=>sumBy(d,'return_count')), num) +
+      barBlock('디자이너별 st수 · 기간합계', mkv(d=>sumBy(d,'st_count')), num);
 
     // 2) 월별 추이 (선택 디자이너 다중 라인)
-    const seriesFor = f => sel.map(d=>({ name:d, color:colorFor(d),
-      vals: months.map(m=>{ const r=rows.find(x=>x.designer===d && x.month===m); return r?Number(r[f]||0):null; }) }));
+    const seriesG = valFn => sel.map(d=>({ name:d, color:colorFor(d),
+      vals: months.map(m=>{ const r=rows.find(x=>x.designer===d && x.month===m); return r? valFn(r) : null; }) }));
+    const custOf = r => (+r.new_count||0)+(+r.return_count||0);
+    const aovOf  = r => { const c=custOf(r); return c>0?Math.round((+r.revenue||0)/c):0; };
     $("dashTrendGrid").innerHTML =
-      lineSection('월별 매출', months, seriesFor('revenue'), true) +
-      lineSection('월별 신규', months, seriesFor('new_count'), false) +
-      lineSection('월별 재방', months, seriesFor('return_count'), false) +
-      lineSection('월별 st수', months, seriesFor('st_count'), false);
+      lineSection('월별 매출', months, seriesG(r=>+r.revenue||0), true) +
+      lineSection('월별 총고객수', months, seriesG(custOf), false) +
+      lineSection('월별 인당 객단가', months, seriesG(aovOf), true) +
+      lineSection('월별 신규', months, seriesG(r=>+r.new_count||0), false) +
+      lineSection('월별 재방', months, seriesG(r=>+r.return_count||0), false) +
+      lineSection('월별 st수', months, seriesG(r=>+r.st_count||0), false);
   }
 
   init();
