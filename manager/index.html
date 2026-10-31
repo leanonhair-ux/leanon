@@ -101,6 +101,11 @@
   .rowbtn{border:1px solid var(--line); background:#fff; border-radius:7px; padding:5px 10px; font-size:12.5px; cursor:pointer; font-family:inherit; margin-left:4px}
   .rowbtn.del{color:#c0392b; border-color:#ecc}
   .empty{color:var(--muted); text-align:center; padding:60px 20px; font-size:15px}
+  #moreWrap{display:flex; justify-content:center; padding:0 18px 50px}
+  #moreWrap:empty{padding:0}
+  .morebtn{border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:10px; padding:12px 24px;
+           font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; width:100%; max-width:340px}
+  .morebtn:hover{background:var(--ink); color:#fff; border-color:var(--ink)}
 
   /* 대시보드 */
   #dashView{display:none; padding:18px 18px 70px; max-width:1180px; margin:0 auto}
@@ -228,6 +233,7 @@
       </table>
       <div class="empty" id="mEmpty" style="display:none">아직 입력된 실적이 없어요. 위에서 추가해 주세요.</div>
     </div>
+    <div id="moreWrap"></div>
   </div>
 
   <!-- 대시보드 -->
@@ -249,7 +255,8 @@
     <div class="dash-grid" id="dashMonthGrid"></div>
 
     <hr style="border:0;border-top:1px solid var(--line);margin:30px 0 22px" />
-    <div class="dash-sectitle" style="margin-bottom:14px">월별 추이 <span style="font-weight:400;color:var(--muted);font-size:13px">· 선택 디자이너 비교</span></div>
+    <div class="dash-sectitle" style="margin-bottom:12px">월별 추이 <span style="font-weight:400;color:var(--muted);font-size:13px">· 선택 디자이너 비교</span></div>
+    <div class="chips" id="metricChips" style="margin-bottom:16px"></div>
     <div class="dash-grid" id="dashTrendGrid"></div>
     <div id="chartTip" class="charttip" style="display:none"></div>
   </div>
@@ -277,6 +284,10 @@
   let rows = [];
   let view = "manage";
   const dashSel = new Set(INPUT_DESIGNERS);   // 대시보드에서 선택된 디자이너(다중)
+  const PAGE_SIZE = 50; let shown = PAGE_SIZE; let listKey = "";   // 목록 페이지네이션
+  const METRIC_DEFS = [['revenue','매출'],['cust','총고객수'],['aov','객단가'],['new_count','신규'],['return_count','재방'],['st_count','st수']];
+  const METRIC_ORDER = METRIC_DEFS.map(m=>m[0]);
+  const trendSel = new Set(['revenue','aov']);   // 대시보드 추이에 표시할 지표(기본: 매출·객단가)
 
   /* ── 인증 (상담 관리와 동일 계정) ── */
   const CRED_KEY = "leanon_admin_cred", LOGOUT_KEY = "leanon_admin_logout";
@@ -333,6 +344,8 @@
     $("filterDesigner").innerHTML = `<option value="">전체</option>` + dOpts;
     // 대시보드 디자이너 다중선택 칩
     $("desChips").innerHTML = INPUT_DESIGNERS.map(d=>`<button type="button" class="chip on" data-d="${esc(d)}"><i style="background:${colorFor(d)}"></i>${esc(d)}</button>`).join("");
+    // 대시보드 추이 지표 다중선택 칩
+    $("metricChips").innerHTML = METRIC_DEFS.map(([k,l])=>`<button type="button" class="chip ${trendSel.has(k)?'on':''}" data-m="${k}">${l}</button>`).join("");
     // 기본 월 = 이번 달
     const now = new Date();
     $("gMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -352,6 +365,13 @@
   });
   $("selAll").onclick  = () => { INPUT_DESIGNERS.forEach(d=>dashSel.add(d)); document.querySelectorAll("#desChips .chip").forEach(c=>c.classList.add("on")); renderDash(); };
   $("selNone").onclick = () => { dashSel.clear(); document.querySelectorAll("#desChips .chip").forEach(c=>c.classList.remove("on")); renderDash(); };
+  $("metricChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if(!b) return;
+    const k = b.dataset.m;
+    if(trendSel.has(k)) trendSel.delete(k); else trendSel.add(k);
+    b.classList.toggle("on", trendSel.has(k));
+    renderDash();
+  });
   // 라인차트 점 호버 → 값 툴팁
   (function(){
     const tip = $("chartTip"), grid = $("dashTrendGrid");
@@ -485,10 +505,14 @@
   function render(){
     if(view==="dash"){ renderDash(); return; }
     const list = currentList();
+    const key = $("filterMonth").value+"|"+$("filterDesigner").value;
+    if(key!==listKey){ shown=PAGE_SIZE; listKey=key; }   // 필터 바뀌면 1페이지로
     const tb=$("mtbody");
-    if(!list.length){ tb.innerHTML=""; $("mtfoot").innerHTML=""; $("mEmpty").style.display=""; updateDelBtn(); return; }
+    if(!list.length){ tb.innerHTML=""; $("mtfoot").innerHTML=""; $("moreWrap").innerHTML=""; $("mEmpty").style.display=""; updateDelBtn(); return; }
     $("mEmpty").style.display="none";
-    tb.innerHTML = list.map(r=>{
+    if(shown>list.length) shown=Math.max(PAGE_SIZE, Math.ceil(list.length/PAGE_SIZE)*PAGE_SIZE);
+    const page = list.slice(0, shown);
+    tb.innerHTML = page.map(r=>{
       const cust = (+r.new_count||0) + (+r.return_count||0);
       const aov = cust>0 ? Math.round((+r.revenue||0)/cust) : 0;
       return `
@@ -515,6 +539,9 @@
       <td class="num">${won(sum.rev)}</td><td class="num">${num(sum.st)}</td>
       <td class="num">${num(sum.nw)}</td><td class="num">${num(sum.rt)}</td>
       <td class="num">${num(sumCust)}</td><td class="num">${won(sumAov)}</td><td></td></tr>`;
+    const remain = list.length - page.length;
+    $("moreWrap").innerHTML = remain>0 ? `<button class="morebtn" id="moreBtn">더 보기 · 남은 ${remain}건</button>` : "";
+    if(remain>0) $("moreBtn").onclick = () => { shown+=PAGE_SIZE; render(); };
     updateDelBtn();
   }
 
@@ -627,13 +654,18 @@
       vals: months.map(m=>{ const r=rows.find(x=>x.designer===d && x.month===m); return r? valFn(r) : null; }) }));
     const custOf = r => (+r.new_count||0)+(+r.return_count||0);
     const aovOf  = r => { const c=custOf(r); return c>0?Math.round((+r.revenue||0)/c):0; };
-    $("dashTrendGrid").innerHTML =
-      lineSection('월별 매출', months, seriesG(r=>+r.revenue||0), true) +
-      lineSection('월별 총고객수', months, seriesG(custOf), false) +
-      lineSection('월별 인당 객단가', months, seriesG(aovOf), true) +
-      lineSection('월별 신규', months, seriesG(r=>+r.new_count||0), false) +
-      lineSection('월별 재방', months, seriesG(r=>+r.return_count||0), false) +
-      lineSection('월별 st수', months, seriesG(r=>+r.st_count||0), false);
+    const trendDefs = {
+      revenue:{label:'월별 매출', money:true, fn:r=>+r.revenue||0},
+      cust:{label:'월별 총고객수', money:false, fn:custOf},
+      aov:{label:'월별 인당 객단가', money:true, fn:aovOf},
+      new_count:{label:'월별 신규', money:false, fn:r=>+r.new_count||0},
+      return_count:{label:'월별 재방', money:false, fn:r=>+r.return_count||0},
+      st_count:{label:'월별 st수', money:false, fn:r=>+r.st_count||0},
+    };
+    const picked = METRIC_ORDER.filter(k=>trendSel.has(k));
+    $("dashTrendGrid").innerHTML = picked.length
+      ? picked.map(k=>{ const d=trendDefs[k]; return lineSection(d.label, months, seriesG(d.fn), d.money); }).join('')
+      : `<div class="dash-empty">위 지표를 1개 이상 선택하세요.</div>`;
   }
 
   init();
