@@ -416,26 +416,29 @@
   $("repMonth").onchange = renderReport;
   $("repDesigner").onchange = renderReport;
   $("repPrint").onclick = () => window.print();
-  // 라인차트 점 호버 → 값 툴팁
-  (function(){
-    const tip = $("chartTip"), grid = $("dashTrendGrid");
-    grid.addEventListener("pointermove", e => {
-      const lab = e.target && e.target.getAttribute && e.target.getAttribute("data-tip");
-      if(lab){ tip.textContent = lab; tip.style.left = e.clientX+"px"; tip.style.top = (e.clientY-14)+"px"; tip.style.display=""; }
-      else { tip.style.display="none"; }
-    });
-    grid.addEventListener("pointerleave", () => { tip.style.display="none"; });
-  })();
+  /* ── 그래프 점 값 툴팁 (PC: 마우스 hover / 모바일: 탭) ── */
+  function tipOf(e){ return e.target && e.target.getAttribute && e.target.getAttribute("data-tip"); }
+  function showTip(e, lab){ const t=$("chartTip"); t.textContent=lab; t.style.left=e.clientX+"px"; t.style.top=(e.clientY-14)+"px"; t.style.display=""; }
+  function hideTip(){ $("chartTip").style.display="none"; }
+  function bindTip(el){
+    el.addEventListener("pointermove", e => { if(e.pointerType!=="mouse") return; const l=tipOf(e); if(l) showTip(e,l); else hideTip(); });
+    el.addEventListener("pointerleave", e => { if(e.pointerType==="mouse") hideTip(); });
+    el.addEventListener("pointerdown", e => { const l=tipOf(e); if(l){ showTip(e,l); e.stopPropagation(); } });  // 모바일 탭 → 표시·유지
+  }
+  bindTip($("dashTrendGrid"));
+  bindTip($("chartModalBody"));
+  document.addEventListener("pointerdown", e => { if(!tipOf(e)) hideTip(); });   // 점 아닌 곳 탭 → 숨김
 
-  /* ── 그래프 클릭 → 확대 모달 ── */
+  /* ── 그래프 클릭 → 확대 모달 (점 탭은 제외: 숫자만 보이게) ── */
   function openChartModal(section){
     $("chartModalBody").innerHTML = `<div class="dash-section">${section.innerHTML}</div>`;
     $("chartModal").hidden = false;
     document.body.style.overflow = "hidden";
   }
-  function closeChartModal(){ $("chartModal").hidden = true; document.body.style.overflow = ""; $("chartTip").style.display="none"; }
+  function closeChartModal(){ $("chartModal").hidden = true; document.body.style.overflow = ""; hideTip(); }
   ["dashTrendGrid","dashMonthGrid"].forEach(id => {
     $(id).addEventListener("click", e => {
+      if(tipOf(e)) return;                       // 점을 탭하면 확대 대신 값 툴팁
       const sec = e.target.closest(".dash-section");
       if(sec && $(id).contains(sec)) openChartModal(sec);
     });
@@ -443,16 +446,6 @@
   $("cmodalX").onclick = closeChartModal;
   $("chartModal").addEventListener("click", e => { if(e.target===$("chartModal")) closeChartModal(); });
   document.addEventListener("keydown", e => { if(e.key==="Escape" && !$("chartModal").hidden) closeChartModal(); });
-  // 모달 안에서도 점 호버 툴팁
-  (function(){
-    const tip=$("chartTip"), body=$("chartModalBody");
-    body.addEventListener("pointermove", e => {
-      const lab = e.target && e.target.getAttribute && e.target.getAttribute("data-tip");
-      if(lab){ tip.textContent=lab; tip.style.left=e.clientX+"px"; tip.style.top=(e.clientY-14)+"px"; tip.style.display=""; }
-      else { tip.style.display="none"; }
-    });
-    body.addEventListener("pointerleave", () => { tip.style.display="none"; });
-  })();
 
   /* ── 데이터 로드 ── */
   async function load(){
@@ -633,7 +626,7 @@
         const cx=xAt(i).toFixed(1), cy=yAt(v).toFixed(1);
         const lab = `${s.name} · ${months[i]} · ${money?won(v)+'원':v.toLocaleString()}`;
         svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="${s.color}"/>`;
-        svg += `<circle cx="${cx}" cy="${cy}" r="12" fill="transparent" data-tip="${esc(lab)}" style="cursor:pointer"/>`;
+        svg += `<circle cx="${cx}" cy="${cy}" r="18" fill="transparent" data-tip="${esc(lab)}" style="cursor:pointer"/>`;
       });
     });
     svg += `</svg>`;
