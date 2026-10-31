@@ -46,6 +46,7 @@
   .viewtoggle .vbtn{border:none; border-radius:0; background:#fff; padding:8px 13px; font-size:13px; cursor:pointer; font-family:inherit; color:var(--ink)}
   .viewtoggle .vbtn+.vbtn{border-left:1px solid var(--line)}
   .viewtoggle .vbtn.active{background:var(--ink); color:#fff}
+  .viewselect{display:none; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; background:#fff; color:var(--ink); font-weight:700}
 
   .wrap{max-width:1180px; margin:0 auto}
 
@@ -186,6 +187,9 @@
   @media(max-width:600px){
     .topbar{padding:12px 14px; gap:8px}
     .topbar .sub{display:none}
+    .topbar button{padding:7px 10px; font-size:12.5px}
+    .viewtoggle{display:none}
+    .viewselect{display:block}
     .formcard{margin:14px}
     .dash-row{grid-template-columns:62px 1fr 80px}
   }
@@ -215,6 +219,11 @@
       <button class="vbtn" data-v="dash">대시보드</button>
       <button class="vbtn" data-v="report">평가 리포트</button>
     </div>
+    <select id="viewSelect" class="viewselect" aria-label="화면 선택">
+      <option value="manage">입력 · 목록</option>
+      <option value="dash">대시보드</option>
+      <option value="report">평가 리포트</option>
+    </select>
     <button id="refreshBtn">새로고침</button>
     <button id="logoutBtn">로그아웃</button>
   </div>
@@ -367,15 +376,18 @@
   };
   $("refreshBtn").onclick = () => load();
 
-  /* ── 뷰 전환 ── */
-  document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.onclick = () => {
-    view = b.dataset.v;
-    document.querySelectorAll(".viewtoggle .vbtn").forEach(x => x.classList.toggle("active", x.dataset.v===view));
-    $("manageView").style.display = view==="manage" ? "" : "none";
-    $("dashView").style.display = view==="dash" ? "block" : "none";
-    $("reportView").style.display = view==="report" ? "block" : "none";
-    if(view==="report") renderReport(); else render();
-  });
+  /* ── 뷰 전환 (PC 버튼 / 모바일 드롭다운 공용) ── */
+  function switchView(v){
+    view = v;
+    document.querySelectorAll(".viewtoggle .vbtn").forEach(x => x.classList.toggle("active", x.dataset.v===v));
+    $("viewSelect").value = v;
+    $("manageView").style.display = v==="manage" ? "" : "none";
+    $("dashView").style.display = v==="dash" ? "block" : "none";
+    $("reportView").style.display = v==="report" ? "block" : "none";
+    if(v==="report") renderReport(); else render();
+  }
+  document.querySelectorAll(".viewtoggle .vbtn").forEach(b => b.onclick = () => switchView(b.dataset.v));
+  $("viewSelect").onchange = () => switchView($("viewSelect").value);
 
   /* ── 셀렉터 초기화 ── */
   function setupSelectors(){
