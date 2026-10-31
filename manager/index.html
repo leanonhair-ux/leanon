@@ -109,6 +109,31 @@
 
   /* 대시보드 */
   #dashView{display:none; padding:18px 18px 70px; max-width:1180px; margin:0 auto}
+  /* 평가 리포트 */
+  #reportView{display:none; padding:18px 18px 70px; max-width:900px; margin:0 auto}
+  .report{background:#fff; border:1px solid var(--line); border-radius:14px; padding:clamp(18px,3.5vw,28px); margin-bottom:22px}
+  .report-head{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; border-bottom:2px solid var(--ink); padding-bottom:12px; margin-bottom:16px}
+  .report-head .who{font-size:clamp(20px,4vw,25px); font-weight:800}
+  .report-head .mon{color:var(--muted); font-weight:700; font-size:14px}
+  .report-summary{background:var(--card); border-radius:10px; padding:12px 14px; font-weight:700; margin-bottom:18px; font-size:15px}
+  table.rep{width:100%; border-collapse:collapse; margin-bottom:20px}
+  table.rep th, table.rep td{padding:9px 10px; border-bottom:1px solid var(--line); font-size:14px; text-align:right; font-variant-numeric:tabular-nums}
+  table.rep th{color:var(--muted); font-weight:700; font-size:12px}
+  table.rep th.l, table.rep td.l{text-align:left; font-weight:700}
+  .d-up{color:#1b8a4b; font-weight:700} .d-down{color:#c0392b; font-weight:700} .d-flat{color:var(--muted)}
+  .fbwrap{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:620px){ .fbwrap{grid-template-columns:1fr} }
+  .fb h4{font-size:14px; margin:0 0 9px}
+  .fb.good h4{color:#1b8a4b} .fb.imp h4{color:#c0392b}
+  .fb ul{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:7px; font-size:14px; line-height:1.5}
+  .fb b{font-weight:800}
+  .repmemo{width:100%; min-height:72px; margin-top:16px; border:1px dashed var(--line); border-radius:10px; padding:10px 12px; font-family:inherit; font-size:14px; resize:vertical; color:var(--ink); background:#fff}
+  @media print{
+    .topbar, #manageView, #dashView, .cmodal, #reportView .dashctl{ display:none !important; }
+    #reportView{display:block !important; padding:0; max-width:none}
+    .report{break-inside:avoid; page-break-after:always; border:1px solid #ccc; margin:0 0 12px}
+    body{background:#fff}
+  }
   .dashctl{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px}
   .dashctl select{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fff; font-weight:700}
   .dashctl .monthin{border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fff; color:var(--ink)}
@@ -188,6 +213,7 @@
     <div class="viewtoggle">
       <button class="vbtn active" data-v="manage">입력 · 목록</button>
       <button class="vbtn" data-v="dash">대시보드</button>
+      <button class="vbtn" data-v="report">평가 리포트</button>
     </div>
     <button id="refreshBtn">새로고침</button>
     <button id="logoutBtn">로그아웃</button>
@@ -259,6 +285,18 @@
     <div class="chips" id="metricChips" style="margin-bottom:16px"></div>
     <div class="dash-grid" id="dashTrendGrid"></div>
     <div id="chartTip" class="charttip" style="display:none"></div>
+  </div>
+
+  <!-- 평가 리포트 -->
+  <div id="reportView">
+    <div class="dashctl">
+      <span class="plabel" style="font-size:13px;color:var(--muted)">월</span>
+      <select id="repMonth"></select>
+      <span class="plabel" style="font-size:13px;color:var(--muted);margin-left:6px">선생님</span>
+      <select id="repDesigner"></select>
+      <button type="button" id="repPrint" class="minibtn" style="margin-left:auto">🖨 인쇄 / PDF 저장</button>
+    </div>
+    <div id="reportBody"></div>
   </div>
 
   <!-- 그래프 확대 모달 -->
@@ -335,7 +373,8 @@
     document.querySelectorAll(".viewtoggle .vbtn").forEach(x => x.classList.toggle("active", x.dataset.v===view));
     $("manageView").style.display = view==="manage" ? "" : "none";
     $("dashView").style.display = view==="dash" ? "block" : "none";
-    render();
+    $("reportView").style.display = view==="report" ? "block" : "none";
+    if(view==="report") renderReport(); else render();
   });
 
   /* ── 셀렉터 초기화 ── */
@@ -346,6 +385,8 @@
     $("desChips").innerHTML = INPUT_DESIGNERS.map(d=>`<button type="button" class="chip on" data-d="${esc(d)}"><i style="background:${colorFor(d)}"></i>${esc(d)}</button>`).join("");
     // 대시보드 추이 지표 다중선택 칩
     $("metricChips").innerHTML = METRIC_DEFS.map(([k,l])=>`<button type="button" class="chip ${trendSel.has(k)?'on':''}" data-m="${k}">${l}</button>`).join("");
+    // 평가 리포트 선생님 선택
+    $("repDesigner").innerHTML = `<option value="__all__">전체 (모든 선생님)</option>` + INPUT_DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
     // 기본 월 = 이번 달
     const now = new Date();
     $("gMonth").value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -372,6 +413,9 @@
     b.classList.toggle("on", trendSel.has(k));
     renderDash();
   });
+  $("repMonth").onchange = renderReport;
+  $("repDesigner").onchange = renderReport;
+  $("repPrint").onclick = () => window.print();
   // 라인차트 점 호버 → 값 툴팁
   (function(){
     const tip = $("chartTip"), grid = $("dashTrendGrid");
@@ -419,6 +463,7 @@
     const months = [...new Set(rows.map(r=>r.month))].sort().reverse();
     $("filterMonth").innerHTML = `<option value="">전체</option>` + months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
     if(months.length){ const asc=[...months].sort(); if(!$("dashFrom").value) $("dashFrom").value=asc[0]; if(!$("dashTo").value) $("dashTo").value=asc[asc.length-1]; }
+    $("repMonth").innerHTML = months.length ? months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("") : `<option value="">(데이터 없음)</option>`;
     buildGrid();
     render();
   }
@@ -666,6 +711,94 @@
     $("dashTrendGrid").innerHTML = picked.length
       ? picked.map(k=>{ const d=trendDefs[k]; return lineSection(d.label, months, seriesG(d.fn), d.money); }).join('')
       : `<div class="dash-empty">위 지표를 1개 이상 선택하세요.</div>`;
+  }
+
+  /* ── 평가 리포트 ── */
+  function prevMonthStr(m){ const [y,mo]=m.split('-').map(Number); const d=new Date(y, mo-2, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  function metricsOf(d,m){
+    const r=rows.find(x=>x.designer===d && x.month===m); if(!r) return null;
+    const rev=+r.revenue||0, st=+r.st_count||0, nw=+r.new_count||0, rt=+r.return_count||0, cust=nw+rt;
+    return {rev,st,nw,rt,cust, aov:cust?Math.round(rev/cust):0, retRate:cust?rt/cust:0, newRate:cust?nw/cust:0};
+  }
+  function teamAvgOf(m){
+    const ms=INPUT_DESIGNERS.map(d=>metricsOf(d,m)).filter(Boolean); if(!ms.length) return null;
+    const n=ms.length, s=f=>ms.reduce((a,x)=>a+x[f],0)/n;
+    return {n, rev:s('rev'), cust:s('cust'), aov:s('aov'), nw:s('nw'), rt:s('rt'), st:s('st'), retRate:s('retRate')};
+  }
+  function dPct(cur, prev){
+    if(prev==null) return '<span class="d-flat">–</span>';
+    if(prev===0) return cur>0?'<span class="d-up">▲ 신규</span>':'<span class="d-flat">–</span>';
+    const p=Math.round((cur-prev)/prev*100);
+    if(p>0) return `<span class="d-up">▲ ${p}%</span>`; if(p<0) return `<span class="d-down">▼ ${Math.abs(p)}%</span>`;
+    return '<span class="d-flat">–</span>';
+  }
+  function dPt(cur, prev){
+    if(prev==null) return '<span class="d-flat">–</span>';
+    const p=Math.round((cur-prev)*100);
+    if(p>0) return `<span class="d-up">▲ ${p}p</span>`; if(p<0) return `<span class="d-down">▼ ${Math.abs(p)}p</span>`;
+    return '<span class="d-flat">–</span>';
+  }
+  function genFeedback(c, p, a){
+    const S=[], I=[];
+    const revMoM = (p && p.rev>0) ? Math.round((c.rev-p.rev)/p.rev*100) : null;
+    if(revMoM!=null && revMoM>=5) S.push(`매출이 전월 대비 <b>${revMoM}%</b> 올랐어요. 성장세가 뚜렷합니다.`);
+    if(revMoM!=null && revMoM<=-5) I.push(`매출이 전월 대비 <b>${Math.abs(revMoM)}%</b> 줄었어요. 재방 고객 관리와 추가 시술 제안을 점검해보세요.`);
+    if(a && a.n>1 && c.rev>=a.rev*1.05) S.push(`팀 평균보다 매출이 높아요. 매장 기여도가 큽니다.`);
+    if(a && a.n>1 && c.rev<=a.rev*0.9) I.push(`매출이 팀 평균을 밑돌아요. 객단가와 고객 수 중 어디를 올릴지 함께 정해봐요.`);
+    if(c.cust>0){
+      if(c.retRate>=0.5) S.push(`재방 고객 비중이 <b>${Math.round(c.retRate*100)}%</b>로 높아요. 단골 관리가 탄탄합니다.`);
+      else if(a && c.retRate < Math.min(0.3, a.retRate||1)) I.push(`재방 비중이 <b>${Math.round(c.retRate*100)}%</b>로 낮아요. 다음 방문 예약 유도와 애프터 케어 메시지로 재방문율을 높여보세요.`);
+      else if(a && a.retRate && c.retRate < a.retRate) I.push(`재방률이 팀 평균보다 낮아요. 예약 리마인드·관리 안내 같은 재방문 루틴을 강화해보세요.`);
+    }
+    if(c.aov>0 && a){
+      if(c.aov>=a.aov*1.05) S.push(`인당 객단가가 팀 평균 이상이에요. 시술 단가·업셀이 잘 되고 있어요.`);
+      else if(c.aov<=a.aov*0.9) I.push(`인당 객단가가 팀 평균보다 낮아요. 클리닉·트리트먼트 등 추가 시술 제안을 늘려보세요.`);
+    }
+    if(c.cust>0 && c.newRate>=0.6 && c.retRate<0.3) I.push(`신규 유입은 좋은데 재방 전환이 약해요. 첫 방문 고객의 두 번째 방문 전환에 집중해보세요.`);
+    if(c.cust>0 && c.newRate>=0.5) S.push(`신규 고객 유치가 활발해요.`);
+    if(a && a.n>1 && c.cust<=a.cust*0.8 && c.aov>=a.aov) I.push(`객단가는 좋은데 총고객수가 적어요. 예약 가동률·신규 유치를 늘리면 매출이 더 커져요.`);
+    if(p && c.cust>p.cust) S.push(`총고객수가 전월보다 늘었어요.`);
+    if(!S.length) S.push(`이번 달 데이터를 기준으로 다음 달 목표를 함께 세워봐요.`);
+    if(!I.length) I.push(`뚜렷한 약점은 없어요. 강점을 유지하며 객단가·재방률을 한 단계 더 올려봐요.`);
+    let sum;
+    if(revMoM!=null && revMoM>=5 && c.retRate>=0.4) sum=`성장과 단골 관리가 모두 좋은 달이에요.`;
+    else if(revMoM!=null && revMoM<=-5) sum=`지난달보다 주춤한 달 — 개선 포인트를 함께 점검해봐요.`;
+    else if(a && c.rev>=a.rev) sum=`팀 평균 이상으로 안정적인 달이에요.`;
+    else sum=`꾸준함 속에 끌어올릴 포인트가 보이는 달이에요.`;
+    return {S:S.slice(0,4), I:I.slice(0,4), sum};
+  }
+  function reportCard(d, m, a){
+    const c=metricsOf(d,m); if(!c) return "";
+    const p=metricsOf(d, prevMonthStr(m));
+    const row=(label,val,delta,avg)=>`<tr><td class="l">${label}</td><td>${val}</td><td>${delta}</td><td style="color:var(--muted)">${avg}</td></tr>`;
+    const fb=genFeedback(c,p,a);
+    const table = `<table class="rep"><thead><tr><th class="l">지표</th><th>이번 달</th><th>전월 대비</th><th>팀 평균</th></tr></thead><tbody>
+      ${row('매출', won(c.rev)+'원', dPct(c.rev, p?p.rev:null), won(Math.round(a.rev))+'원')}
+      ${row('총고객수', num(c.cust)+'명', dPct(c.cust, p?p.cust:null), num(Math.round(a.cust))+'명')}
+      ${row('인당 객단가', won(c.aov)+'원', dPct(c.aov, p?p.aov:null), won(Math.round(a.aov))+'원')}
+      ${row('신규', num(c.nw)+'명', dPct(c.nw, p?p.nw:null), num(Math.round(a.nw))+'명')}
+      ${row('재방', num(c.rt)+'명', dPct(c.rt, p?p.rt:null), num(Math.round(a.rt))+'명')}
+      ${row('재방률', Math.round(c.retRate*100)+'%', dPt(c.retRate, p?p.retRate:null), Math.round(a.retRate*100)+'%')}
+      ${row('st수', num(c.st), dPct(c.st, p?p.st:null), num(Math.round(a.st)))}
+      </tbody></table>`;
+    return `<div class="report">
+      <div class="report-head"><span class="who">${esc(d)} 선생님</span><span class="mon">${esc(m)} 월간 실적 평가</span></div>
+      <div class="report-summary">💬 ${fb.sum}</div>
+      ${table}
+      <div class="fbwrap">
+        <div class="fb good"><h4>👍 잘한 점</h4><ul>${fb.S.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+        <div class="fb imp"><h4>🎯 개선할 점</h4><ul>${fb.I.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+      </div>
+      <textarea class="repmemo" placeholder="면담 메모 (인쇄 시 함께 출력됩니다)"></textarea>
+    </div>`;
+  }
+  function renderReport(){
+    const m=$("repMonth").value, who=$("repDesigner").value;
+    if(!m){ $("reportBody").innerHTML=`<div class="dash-empty">입력된 데이터가 없어요.</div>`; return; }
+    const a=teamAvgOf(m);
+    const list = who==="__all__" ? INPUT_DESIGNERS.filter(d=>metricsOf(d,m)) : (metricsOf(who,m)?[who]:[]);
+    const cards = list.map(d=>reportCard(d,m,a)).join("");
+    $("reportBody").innerHTML = cards || `<div class="dash-empty">${esc(m)} · 해당 선생님 데이터가 없어요.</div>`;
   }
 
   init();
