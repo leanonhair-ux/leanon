@@ -124,6 +124,14 @@
   .amtin{font-size:22px !important; font-weight:800; text-align:right}
   .quick{display:flex; gap:7px; flex-wrap:wrap; margin-top:9px}
   .quick button{border:1px solid var(--line); background:#faf7f2; border-radius:20px; padding:8px 13px; font-size:13px; font-weight:700; cursor:pointer}
+  .itemshead{font-size:12.5px; color:var(--muted); font-weight:700; margin-bottom:10px}
+  .itemshead span{font-weight:500; opacity:.8}
+  .uitem{display:grid; grid-template-columns:1.2fr 1fr 1.1fr auto; gap:8px; align-items:center; margin-bottom:9px}
+  .uitem select, .uitem input{border:1px solid var(--line); border-radius:10px; padding:12px 10px; font-size:15px; background:#fff; min-width:0; width:100%}
+  .uitem .uiAmount{text-align:right; font-weight:800}
+  .uitem .uidel{border:none; background:none; color:#c9b; font-size:22px; cursor:pointer; padding:0 2px; line-height:1}
+  @media(max-width:540px){ .uitem{grid-template-columns:1fr 1fr auto; row-gap:7px} .uitem .uiService{grid-column:1/3} .uitem .uidel{grid-row:1/3; align-self:center} }
+  .additem{width:100%; border:1.5px dashed var(--line); background:#faf7f2; color:var(--ink); border-radius:11px; padding:13px; font-size:14px; font-weight:700; cursor:pointer; margin-bottom:14px}
   .preview{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin:4px 0 14px; font-size:14px}
   .preview .pl{display:flex; justify-content:space-between; padding:3px 0}
   .preview .pl b{font-weight:800}
@@ -227,25 +235,28 @@
     <h3 id="txTitle">충전</h3>
     <div class="who" id="txWho"></div>
 
-    <div class="field" id="fAmount">
-      <label id="lAmount">결제 금액</label>
-      <input id="iAmount" class="amtin" type="number" inputmode="numeric" placeholder="0" />
-      <div class="quick" id="qAmount"></div>
+    <!-- 충전 전용 -->
+    <div id="chargeFields">
+      <div class="field" id="fAmount">
+        <label>결제 금액</label>
+        <input id="iAmount" class="amtin" type="number" inputmode="numeric" placeholder="0" />
+        <div class="quick" id="qAmount"></div>
+      </div>
+      <div class="field" id="fBonus">
+        <label>적립 보너스 (결제 금액의 10% 자동)</label>
+        <input id="iBonus" class="amtin" type="number" readonly tabindex="-1" placeholder="0" style="background:#f2efe9; color:var(--muted)" />
+      </div>
+      <div class="field">
+        <label>메모</label>
+        <input id="iMemo" type="text" placeholder="" />
+      </div>
     </div>
 
-    <div class="field" id="fBonus">
-      <label>적립 보너스 (결제 금액의 10% 자동)</label>
-      <input id="iBonus" class="amtin" type="number" readonly tabindex="-1" placeholder="0" style="background:#f2efe9; color:var(--muted)" />
-    </div>
-
-    <div class="field" id="fDesigner" hidden>
-      <label>담당 디자이너</label>
-      <select id="iDesigner"></select>
-    </div>
-
-    <div class="field">
-      <label id="lMemo">메모</label>
-      <input id="iMemo" type="text" placeholder="" />
+    <!-- 사용 전용 (시술 항목 여러 개) -->
+    <div id="useFields" hidden>
+      <div class="itemshead">시술 항목 <span>서비스·디자이너·금액별로 추가</span></div>
+      <div id="useList"></div>
+      <button type="button" id="addItem" class="additem">＋ 항목 추가</button>
     </div>
 
     <div class="preview" id="txPreview"></div>
@@ -295,6 +306,7 @@
   const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
   const DESIGNERS = ["정소현", "이하늘", "장영원", "조예진", "전영주", "천예은", "오기쁨"];
+  const SERVICES  = ["커트", "펌", "염색", "클리닉", "탈색", "하이라이트", "드라이/샴푸"];
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = id => document.getElementById(id);
   const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -348,11 +360,33 @@
 
   let staffEmail = "";
   function setup(){
-    $("iDesigner").innerHTML = `<option value="">(선택)</option>` + DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
-    // 금액 빠른 입력 칩
+    // 충전 금액 빠른 입력 칩 (50만·100만)
     $("qAmount").innerHTML = [500000,1000000].map(v=>`<button type="button" data-set="${v}">${(v/10000)}만원</button>`).join("");
     $("qAmount").onclick = e=>{ const b=e.target.closest("button"); if(!b)return; $("iAmount").value = Number(b.dataset.set||0); txPreview(); };
+    $("addItem").onclick = ()=>{ addItemRow(); txPreview(); };
+    $("useList").addEventListener("change", txPreview);  // 서비스·디자이너 변경 시 미리보기 갱신
     sb.auth.getUser().then(({data})=>{ staffEmail = data?.user?.email || ""; });
+  }
+  const svcOpts = () => SERVICES.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+  const desOpts = () => `<option value="">디자이너</option>` + DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
+  function addItemRow(){
+    const div = document.createElement("div");
+    div.className = "uitem";
+    div.innerHTML = `
+      <select class="uiService">${svcOpts()}</select>
+      <select class="uiDesigner">${desOpts()}</select>
+      <input class="uiAmount" type="number" inputmode="numeric" placeholder="금액" />
+      <button type="button" class="uidel" title="삭제">×</button>`;
+    div.querySelector(".uiAmount").addEventListener("input", txPreview);
+    div.querySelector(".uidel").onclick = ()=>{ div.remove(); if(!$("useList").children.length) addItemRow(); txPreview(); };
+    $("useList").appendChild(div);
+  }
+  function readItems(){
+    return [...$("useList").querySelectorAll(".uitem")].map(r=>({
+      service: r.querySelector(".uiService").value,
+      designer: r.querySelector(".uiDesigner").value,
+      amount: Math.max(0, Math.floor(Number(r.querySelector(".uiAmount").value||0)))
+    }));
   }
 
   function monthStr(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
@@ -418,10 +452,15 @@
       const amtTxt = isC
         ? `+${won(t.amount)}${Number(t.bonus)>0?`<small>보너스 +${won(t.bonus)}</small>`:""}`
         : `−${won(t.amount)}`;
-      const sub = [t.memo||(isC?"충전":"사용"), t.designer?("· "+t.designer):""].filter(Boolean).join(" ");
+      let descHtml;
+      if(!isC && Array.isArray(t.items) && t.items.length){
+        descHtml = t.items.map(it=>`${esc(it.service)} · ${esc(it.designer||"-")} <b style="font-weight:800">${won(it.amount)}</b>`).join("<br>");
+      } else {
+        descHtml = esc([t.memo||(isC?"충전":"사용"), t.designer?("· "+t.designer):""].filter(Boolean).join(" "));
+      }
       return `<div class="hrow" data-id="${t.id}">
         <span class="tag ${t.type}">${isC?"충전":"사용"}</span>
-        <div class="desc"><div class="m">${esc(sub)}</div><div class="d">${dstr} · 잔액 ${won(t.balance_after)}</div></div>
+        <div class="desc"><div class="m">${descHtml}</div><div class="d">${dstr} · 잔액 ${won(t.balance_after)}</div></div>
         <span class="spacer"></span>
         <div class="amt ${isC?'plus':'minus'}">${amtTxt}</div>
         ${t.signature?`<button class="signbtn" data-sig="${t.id}">서명</button>`:""}
@@ -449,19 +488,17 @@
     const isC = mode==="charge";
     $("txTitle").textContent = isC ? "충전" : "사용";
     $("txWho").textContent = `${cur.name} · 현재 잔액 ${won(cur.balance)}`;
-    $("lAmount").textContent = isC ? "결제 금액" : "사용(차감) 금액";
-    $("fBonus").hidden = !isC;
-    $("fDesigner").hidden = isC;        // 사용 시에만 담당 디자이너
-    $("lMemo").textContent = isC ? "메모" : "서비스 내용";
-    $("iMemo").placeholder = isC ? "" : "예) 뿌리염색, 클리닉";
-    $("iAmount").value=""; $("iBonus").value=""; $("iMemo").value=""; $("iDesigner").value="";
+    $("chargeFields").hidden = !isC;
+    $("useFields").hidden = isC;
+    if(isC){ $("iAmount").value=""; $("iBonus").value=""; $("iMemo").value=""; }
+    else { $("useList").innerHTML=""; addItemRow(); }
     $("txErr").textContent="";
     $("txSave").className = "ok " + mode;
     $("txSave").textContent = isC ? "충전 저장" : "사용 저장";
     $("txModal").classList.add("open");
     requestAnimationFrame(()=>{ resizeSig(); clearSig(); });
     txPreview();
-    $("iAmount").focus();
+    if(isC) $("iAmount").focus();
   }
   $("dCharge").onclick = ()=>openTx("charge");
   $("dUse").onclick = ()=>openTx("use");
@@ -482,25 +519,38 @@
         `<div class="pl"><span>충전 후 잔액</span><b>${won(after)}</b></div>`;
       $("txSave").disabled = !(credit>0);
     } else {
-      const after = bal-amt, over = after<0;
+      const items = readItems().filter(it=>it.amount>0);
+      const total = items.reduce((a,it)=>a+it.amount,0);
+      const after = bal-total, over = after<0;
+      const lines = items.map(it=>`<div class="pl"><span>${esc(it.service)}${it.designer?" · "+esc(it.designer):""}</span><b>−${won(it.amount)}</b></div>`).join("");
       $("txPreview").innerHTML =
         `<div class="pl"><span>현재 잔액</span><b>${won(bal)}</b></div>`+
-        `<div class="pl"><span>사용(차감)</span><b>−${won(amt)}</b></div>`+
+        lines+
+        `<div class="pl"><span>사용(차감) 합계</span><b>−${won(total)}</b></div>`+
         `<div class="pl total ${over?'warn':''}"><span>사용 후 잔액</span><b>${over?"잔액 부족":won(after)}</b></div>`;
-      $("txSave").disabled = !(amt>0) || over;
+      $("txSave").disabled = !(total>0) || over;
     }
   }
 
   $("txSave").onclick = async ()=>{
     $("txErr").textContent="";
-    const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
-    const bonus = txMode==="charge" ? Math.floor(amt*0.1) : 0;   // 보너스 = 결제금액 10% 고정
     const bal = Number(cur.balance||0);
-    const delta = txMode==="charge" ? (amt+bonus) : (-amt);
-    if(txMode==="charge" && amt+bonus<=0){ $("txErr").textContent="금액을 입력해 주세요."; return; }
-    if(txMode==="use"){
-      if(amt<=0){ $("txErr").textContent="사용 금액을 입력해 주세요."; return; }
+    let amt, bonus=0, delta, memo=null, designer=null, items=null;
+    if(txMode==="charge"){
+      amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
+      bonus = Math.floor(amt*0.1);                      // 보너스 = 결제금액 10% 고정
+      if(amt+bonus<=0){ $("txErr").textContent="금액을 입력해 주세요."; return; }
+      delta = amt+bonus;
+      memo = $("iMemo").value.trim()||null;
+    } else {
+      items = readItems().filter(it=>it.amount>0);
+      if(!items.length){ $("txErr").textContent="시술 항목과 금액을 입력해 주세요."; return; }
+      if(items.some(it=>!it.designer)){ $("txErr").textContent="각 항목의 담당 디자이너를 선택해 주세요."; return; }
+      amt = items.reduce((a,it)=>a+it.amount,0);
       if(bal-amt<0){ $("txErr").textContent="잔액이 부족합니다."; return; }
+      delta = -amt;
+      memo = items.map(it=>it.service).join(", ");
+      designer = items.length===1 ? items[0].designer : null;  // 단일 항목이면 대표 디자이너 기록
     }
     if(sigEmpty()){ $("txErr").textContent="고객 서명을 받아 주세요."; return; }
     const after = bal + delta;
@@ -508,8 +558,7 @@
     $("txSave").disabled = true;
     const { error } = await sb.from("pass_transactions").insert({
       member_id: cur.id, type: txMode, amount: amt, bonus: bonus, delta: delta,
-      balance_after: after, memo: $("iMemo").value.trim()||null,
-      designer: txMode==="use" ? ($("iDesigner").value||null) : null,
+      balance_after: after, memo: memo, designer: designer, items: items,
       signature: sig, created_by: staffEmail||null
     });
     if(error){ $("txErr").textContent="저장 실패: "+error.message; $("txSave").disabled=false; return; }

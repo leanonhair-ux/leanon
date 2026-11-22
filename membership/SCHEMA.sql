@@ -19,7 +19,8 @@ create table if not exists pass_transactions (
   delta         integer not null,            -- 잔액 변동 (charge:+(amount+bonus) / use:-amount)
   balance_after integer not null,            -- 거래 직후 잔액 스냅샷
   memo          text,
-  designer      text,
+  designer      text,                        -- 단일 항목 사용 시 대표 디자이너
+  items         jsonb,                       -- 사용 시 시술 항목 [{service,designer,amount}] (가족 공유 대응)
   signature     text,                        -- 전자서명 PNG (data URL)
   created_by    text,
   created_at    timestamptz not null default now()
