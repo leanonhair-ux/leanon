@@ -234,9 +234,8 @@
     </div>
 
     <div class="field" id="fBonus">
-      <label>적립 보너스 (서비스 금액)</label>
-      <input id="iBonus" class="amtin" type="number" inputmode="numeric" placeholder="0" />
-      <div class="quick" id="qBonus"></div>
+      <label>적립 보너스 (결제 금액의 10% 자동)</label>
+      <input id="iBonus" class="amtin" type="number" readonly tabindex="-1" placeholder="0" style="background:#f2efe9; color:var(--muted)" />
     </div>
 
     <div class="field" id="fDesigner" hidden>
@@ -351,10 +350,8 @@
   function setup(){
     $("iDesigner").innerHTML = `<option value="">(선택)</option>` + DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
     // 금액 빠른 입력 칩
-    $("qAmount").innerHTML = [100000,200000,300000,500000,1000000].map(v=>`<button type="button" data-add="${v}">+${(v/10000)}만</button>`).join("");
-    $("qBonus").innerHTML  = [0,10000,30000,50000,100000].map(v=>v===0?`<button type="button" data-set="0">보너스 없음</button>`:`<button type="button" data-add="${v}">+${(v/10000)}만</button>`).join("");
-    $("qAmount").onclick = e=>{ const b=e.target.closest("button"); if(!b)return; $("iAmount").value = (Number($("iAmount").value||0) + Number(b.dataset.add||0)); txPreview(); };
-    $("qBonus").onclick  = e=>{ const b=e.target.closest("button"); if(!b)return; if(b.dataset.set!=null){ $("iBonus").value=b.dataset.set; } else { $("iBonus").value = (Number($("iBonus").value||0)+Number(b.dataset.add||0)); } txPreview(); };
+    $("qAmount").innerHTML = [500000,1000000].map(v=>`<button type="button" data-set="${v}">${(v/10000)}만원</button>`).join("");
+    $("qAmount").onclick = e=>{ const b=e.target.closest("button"); if(!b)return; $("iAmount").value = Number(b.dataset.set||0); txPreview(); };
     sb.auth.getUser().then(({data})=>{ staffEmail = data?.user?.email || ""; });
   }
 
@@ -469,12 +466,13 @@
   $("dCharge").onclick = ()=>openTx("charge");
   $("dUse").onclick = ()=>openTx("use");
   $("txCancel").onclick = ()=> $("txModal").classList.remove("open");
-  ["iAmount","iBonus"].forEach(id=> $(id).addEventListener("input", txPreview));
+  $("iAmount").addEventListener("input", txPreview);
 
   function txPreview(){
     const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
-    const bonus = Math.max(0, Math.floor(Number($("iBonus").value||0)));
     const bal = Number(cur?.balance||0);
+    const bonus = txMode==="charge" ? Math.floor(amt*0.1) : 0;   // 보너스 = 결제금액 10% 고정
+    if(txMode==="charge") $("iBonus").value = bonus;
     if(txMode==="charge"){
       const credit = amt+bonus, after = bal+credit;
       $("txPreview").innerHTML =
@@ -496,7 +494,7 @@
   $("txSave").onclick = async ()=>{
     $("txErr").textContent="";
     const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
-    const bonus = txMode==="charge" ? Math.max(0, Math.floor(Number($("iBonus").value||0))) : 0;
+    const bonus = txMode==="charge" ? Math.floor(amt*0.1) : 0;   // 보너스 = 결제금액 10% 고정
     const bal = Number(cur.balance||0);
     const delta = txMode==="charge" ? (amt+bonus) : (-amt);
     if(txMode==="charge" && amt+bonus<=0){ $("txErr").textContent="금액을 입력해 주세요."; return; }
