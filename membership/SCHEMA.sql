@@ -2,12 +2,14 @@
 -- Supabase SQL Editor 에서 1회 실행
 
 create table if not exists pass_members (
-  id         uuid primary key default gen_random_uuid(),
-  name       text not null,
-  phone      text,
-  memo       text,
-  balance    integer not null default 0,   -- 캐시된 현재 잔액(원장 합계로 재검증)
-  created_at timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  name            text not null,
+  phone           text,
+  memo            text,
+  balance         integer not null default 0,   -- 캐시된 현재 잔액(원장 합계로 재검증)
+  designer        text,                          -- 담당 디자이너(충전 시 지정, 사용 항목 기본값)
+  first_charge_at timestamptz,                   -- 최초 충전일(유효기간=+1년 기준)
+  created_at      timestamptz not null default now()
 );
 
 create table if not exists pass_transactions (
