@@ -1,8 +1,8 @@
 {
   "name": "LEANON 정액권",
   "short_name": "정액권",
-  "start_url": "/pass/",
-  "scope": "/pass/",
+  "start_url": "/membership/",
+  "scope": "/membership/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
