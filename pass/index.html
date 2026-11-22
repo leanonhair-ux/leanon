@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>LEANON 정액권</title>
+<link rel="manifest" href="/pass/manifest.webmanifest" />
+<meta name="theme-color" content="#ffffff" />
+<link rel="apple-touch-icon" href="/assets/app/icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="정액권" />
+<meta name="mobile-web-app-capable" content="yes" />
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{}));}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{ color-scheme:light; --ink:#1c1a17; --muted:#8a8377; --line:#e6e1d9; --bg:#ffffff; --card:#f6f1ea; --radius:14px;
+         --accent:#2f6bd0; --charge:#1f9d55; --use:#c0392b; }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+       background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent}
+  [hidden]{display:none !important}
+  button{font-family:inherit}
+
+  /* ── 로그인 ── */
+  #loginView{max-width:360px; margin:0 auto; padding:110px 24px}
+  #loginView h1{font-size:24px; letter-spacing:5px; text-align:center; margin-bottom:6px}
+  .loginlogo{width:150px; max-width:60%; height:auto; display:block; margin:0 auto 10px}
+  #loginView p{text-align:center; color:var(--muted); font-size:13px; margin-bottom:30px}
+  #loginView input{width:100%; border:1px solid var(--line); border-radius:10px; background:#fff;
+       padding:14px; font-size:16px; margin-bottom:10px}
+  #loginView button{width:100%; border:none; border-radius:10px; background:var(--ink); color:#fff;
+       font-size:15px; font-weight:700; padding:15px; margin-top:6px; cursor:pointer}
+  #loginErr{color:#c0392b; font-size:13px; text-align:center; margin-top:12px; min-height:18px}
+  .remember{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--muted); margin-top:12px; cursor:pointer; user-select:none}
+  .remember input{width:auto !important; margin:0 !important; accent-color:var(--ink)}
+
+  /* ── 앱 ── */
+  #appView{display:none}
+  .topbar{position:sticky; top:0; z-index:5; background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--line); padding:12px 18px; display:flex; align-items:center; gap:12px}
+  .topbar .toplogo{height:22px; width:auto; display:block}
+  .topbar .sub{color:var(--muted); font-size:13px; font-weight:700; letter-spacing:1px}
+  .topbar .spacer{flex:1}
+  .topbar button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:9px 13px;
+                 font-size:13px; cursor:pointer; white-space:nowrap}
+  .wrap{max-width:860px; margin:0 auto; padding:0 16px 60px}
+
+  /* 요약 */
+  .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:16px 0}
+  .scard{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 14px}
+  .scard .lbl{font-size:11.5px; color:var(--muted); font-weight:700}
+  .scard .val{font-size:19px; font-weight:800; margin-top:4px; letter-spacing:-.3px}
+  @media(max-width:640px){ .summary{grid-template-columns:repeat(2,1fr)} }
+
+  /* 검색/신규 */
+  .toolbar{display:flex; gap:10px; margin:6px 0 14px}
+  .toolbar input{flex:1; border:1px solid var(--line); border-radius:11px; padding:14px 16px; font-size:16px; background:#fff}
+  .btn-primary{border:none; border-radius:11px; background:var(--ink); color:#fff; font-weight:800; font-size:15px;
+               padding:0 20px; cursor:pointer; white-space:nowrap}
+
+  /* 회원 목록 */
+  .mlist{display:flex; flex-direction:column; gap:10px}
+  .mrow{display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--line); border-radius:13px;
+        padding:16px 18px; cursor:pointer; transition:background .1s}
+  .mrow:active{background:#faf7f2}
+  .mrow .nm{font-size:17px; font-weight:800}
+  .mrow .ph{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .mrow .spacer{flex:1}
+  .mrow .bal{font-size:19px; font-weight:800; text-align:right; letter-spacing:-.3px}
+  .mrow .bal small{display:block; font-size:11px; color:var(--muted); font-weight:700; letter-spacing:0}
+  .empty{text-align:center; color:var(--muted); padding:60px 20px; font-size:14px}
+
+  /* 상세 (오버레이) */
+  .detail{position:fixed; inset:0; z-index:40; background:var(--bg); overflow-y:auto; display:none; flex-direction:column}
+  .detail.open{display:flex}
+  .dhead{position:sticky; top:0; background:rgba(255,255,255,.95); backdrop-filter:blur(8px);
+         border-bottom:1px solid var(--line); padding:12px 16px; display:flex; align-items:center; gap:12px; z-index:2}
+  .dhead .back{border:1px solid var(--line); background:#fff; border-radius:9px; padding:9px 14px; font-size:14px; cursor:pointer}
+  .dhead .dname{font-size:18px; font-weight:800}
+  .dhead .dph{font-size:12.5px; color:var(--muted)}
+  .dhead .spacer{flex:1}
+  .dhead .mini{border:1px solid var(--line); background:#fff; border-radius:9px; padding:9px 12px; font-size:13px; cursor:pointer}
+  .dbody{max-width:860px; margin:0 auto; width:100%; padding:16px 16px 80px}
+
+  .balcard{background:var(--ink); color:#fff; border-radius:16px; padding:22px 24px; text-align:center; margin-bottom:16px}
+  .balcard .lbl{font-size:13px; opacity:.7; font-weight:700}
+  .balcard .big{font-size:40px; font-weight:800; margin-top:6px; letter-spacing:-1px}
+  .balcard .memo{font-size:12.5px; opacity:.6; margin-top:8px; min-height:16px}
+
+  .actions{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:22px}
+  .bigbtn{border:none; border-radius:14px; padding:20px; font-size:18px; font-weight:800; color:#fff; cursor:pointer}
+  .bigbtn.charge{background:var(--charge)}
+  .bigbtn.use{background:var(--use)}
+
+  .histtitle{font-size:13px; font-weight:800; color:var(--muted); margin:0 2px 10px}
+  .hist{display:flex; flex-direction:column; gap:8px}
+  .hrow{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:12px; padding:13px 15px; background:#fff}
+  .hrow .tag{font-size:11px; font-weight:800; padding:4px 9px; border-radius:20px; white-space:nowrap}
+  .tag.charge{background:#e5f4ec; color:var(--charge)}
+  .tag.use{background:#fdecea; color:var(--use)}
+  .hrow .desc{min-width:0}
+  .hrow .desc .m{font-size:14px; font-weight:700}
+  .hrow .desc .d{font-size:11.5px; color:var(--muted); margin-top:3px}
+  .hrow .spacer{flex:1}
+  .hrow .amt{font-weight:800; font-size:16px; text-align:right; white-space:nowrap}
+  .hrow .amt.plus{color:var(--charge)} .hrow .amt.minus{color:var(--use)}
+  .hrow .amt small{display:block; font-size:11px; color:var(--muted); font-weight:700}
+  .hrow .signbtn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 10px; font-size:12px; cursor:pointer; white-space:nowrap}
+  .hrow .delx{border:none; background:none; color:#cbb; font-size:18px; cursor:pointer; padding:2px 4px; line-height:1}
+
+  /* 모달 */
+  .modal{position:fixed; inset:0; z-index:60; background:rgba(28,26,23,.45); display:none; align-items:flex-end; justify-content:center}
+  .modal.open{display:flex}
+  .sheet{background:#fff; width:100%; max-width:620px; border-radius:20px 20px 0 0; max-height:94vh; overflow-y:auto;
+         padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+  @media(min-width:640px){ .modal{align-items:center} .sheet{border-radius:20px; max-height:90vh} }
+  .sheet h3{font-size:19px; font-weight:800; margin-bottom:4px}
+  .sheet .who{color:var(--muted); font-size:13px; margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12.5px; color:var(--muted); font-weight:700; margin-bottom:6px}
+  .field input, .field select, .field textarea{width:100%; border:1px solid var(--line); border-radius:11px; padding:14px; font-size:16px; background:#fff}
+  .field textarea{resize:none; min-height:54px}
+  .amtin{font-size:22px !important; font-weight:800; text-align:right}
+  .quick{display:flex; gap:7px; flex-wrap:wrap; margin-top:9px}
+  .quick button{border:1px solid var(--line); background:#faf7f2; border-radius:20px; padding:8px 13px; font-size:13px; font-weight:700; cursor:pointer}
+  .preview{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 15px; margin:4px 0 14px; font-size:14px}
+  .preview .pl{display:flex; justify-content:space-between; padding:3px 0}
+  .preview .pl b{font-weight:800}
+  .preview .total{border-top:1px dashed var(--line); margin-top:6px; padding-top:9px; font-size:17px}
+  .preview .warn{color:var(--use); font-weight:800}
+
+  .signwrap{margin-bottom:16px}
+  .signwrap .sl{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px}
+  .signwrap .sl span{font-size:12.5px; color:var(--muted); font-weight:700}
+  .signwrap .sl button{border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 12px; font-size:12.5px; cursor:pointer}
+  .sigpad{width:100%; height:200px; border:2px dashed var(--line); border-radius:12px; background:#fffdfa; touch-action:none; display:block}
+  .sighint{font-size:11.5px; color:var(--muted); text-align:center; margin-top:5px}
+
+  .mbtns{display:flex; gap:10px; margin-top:4px}
+  .mbtns button{flex:1; border:none; border-radius:12px; padding:16px; font-size:16px; font-weight:800; cursor:pointer}
+  .mbtns .cancel{background:#eee; color:var(--ink)}
+  .mbtns .ok{background:var(--ink); color:#fff}
+  .mbtns .ok.charge{background:var(--charge)} .mbtns .ok.use{background:var(--use)}
+  .mbtns .ok:disabled{opacity:.4}
+  .merr{color:var(--use); font-size:13px; font-weight:700; text-align:center; min-height:18px; margin-top:8px}
+
+  /* 서명 보기 */
+  .sigview{position:fixed; inset:0; z-index:80; background:rgba(28,26,23,.6); display:none; align-items:center; justify-content:center; padding:24px}
+  .sigview.open{display:flex}
+  .sigview .box{background:#fff; border-radius:16px; padding:18px; max-width:560px; width:100%; text-align:center}
+  .sigview img{width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:#fffdfa}
+  .sigview .cap{font-size:12.5px; color:var(--muted); margin:10px 0}
+  .sigview .cls{border:none; background:var(--ink); color:#fff; border-radius:10px; padding:12px 22px; font-weight:700; cursor:pointer}
+
+  .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff;
+         padding:13px 22px; border-radius:30px; font-size:14px; font-weight:700; z-index:100; opacity:0; transition:opacity .2s; pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<section id="loginView">
+  <img src="/assets/brand/wordmark-dark.png" class="loginlogo" alt="LEANON" onerror="this.style.display='none'" />
+  <p>정액권 관리 · 직원 전용</p>
+  <input id="email" type="text" placeholder="아이디" autocomplete="username" />
+  <input id="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
+  <button id="loginBtn">로그인</button>
+  <label class="remember"><input type="checkbox" id="remember" /> 자동 로그인 유지</label>
+  <div id="loginErr"></div>
+</section>
+
+<!-- 앱 -->
+<section id="appView">
+  <div class="topbar">
+    <img src="/assets/brand/wordmark-dark.png" class="toplogo" alt="LEANON" onerror="this.style.display='none'" />
+    <span class="sub">정액권</span>
+    <span class="spacer"></span>
+    <button id="refreshBtn">새로고침</button>
+    <button id="logoutBtn">로그아웃</button>
+  </div>
+
+  <div class="wrap">
+    <div class="summary">
+      <div class="scard"><div class="lbl">회원</div><div class="val" id="sMembers">–</div></div>
+      <div class="scard"><div class="lbl">총 미사용 잔액</div><div class="val" id="sBalance">–</div></div>
+      <div class="scard"><div class="lbl">이번달 충전</div><div class="val" id="sCharge">–</div></div>
+      <div class="scard"><div class="lbl">이번달 사용</div><div class="val" id="sUse">–</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="이름·전화번호 검색" />
+      <button class="btn-primary" id="newBtn">+ 신규 고객</button>
+    </div>
+
+    <div class="mlist" id="mlist"></div>
+  </div>
+</section>
+
+<!-- 고객 상세 -->
+<div class="detail" id="detail">
+  <div class="dhead">
+    <button class="back" id="dBack">← 목록</button>
+    <div><div class="dname" id="dName"></div><div class="dph" id="dPhone"></div></div>
+    <span class="spacer"></span>
+    <button class="mini" id="dEdit">정보수정</button>
+  </div>
+  <div class="dbody">
+    <div class="balcard">
+      <div class="lbl">현재 잔액</div>
+      <div class="big" id="dBalance">₩0</div>
+      <div class="memo" id="dMemo"></div>
+    </div>
+    <div class="actions">
+      <button class="bigbtn charge" id="dCharge">＋ 충전</button>
+      <button class="bigbtn use" id="dUse">－ 사용</button>
+    </div>
+    <div class="histtitle">거래 내역</div>
+    <div class="hist" id="hist"></div>
+  </div>
+</div>
+
+<!-- 충전/사용 모달 -->
+<div class="modal" id="txModal">
+  <div class="sheet">
+    <h3 id="txTitle">충전</h3>
+    <div class="who" id="txWho"></div>
+
+    <div class="field" id="fAmount">
+      <label id="lAmount">결제 금액</label>
+      <input id="iAmount" class="amtin" type="number" inputmode="numeric" placeholder="0" />
+      <div class="quick" id="qAmount"></div>
+    </div>
+
+    <div class="field" id="fBonus">
+      <label>적립 보너스 (서비스 금액)</label>
+      <input id="iBonus" class="amtin" type="number" inputmode="numeric" placeholder="0" />
+      <div class="quick" id="qBonus"></div>
+    </div>
+
+    <div class="field" id="fDesigner" hidden>
+      <label>담당 디자이너</label>
+      <select id="iDesigner"></select>
+    </div>
+
+    <div class="field">
+      <label id="lMemo">메모</label>
+      <input id="iMemo" type="text" placeholder="" />
+    </div>
+
+    <div class="preview" id="txPreview"></div>
+
+    <div class="signwrap">
+      <div class="sl"><span>고객 서명</span><button type="button" id="sigClear">지우기</button></div>
+      <canvas class="sigpad" id="sigpad"></canvas>
+      <div class="sighint">위 영역에 손가락(또는 펜)으로 서명해 주세요</div>
+    </div>
+
+    <div class="merr" id="txErr"></div>
+    <div class="mbtns">
+      <button class="cancel" id="txCancel">취소</button>
+      <button class="ok" id="txSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 신규/정보수정 모달 -->
+<div class="modal" id="memModal">
+  <div class="sheet">
+    <h3 id="memTitle">신규 고객</h3>
+    <div class="field"><label>이름 *</label><input id="mName" type="text" /></div>
+    <div class="field"><label>전화번호</label><input id="mPhone" type="tel" inputmode="numeric" placeholder="010-0000-0000" /></div>
+    <div class="field"><label>메모</label><textarea id="mMemo" placeholder="특이사항 등"></textarea></div>
+    <div class="merr" id="memErr"></div>
+    <div class="mbtns">
+      <button class="cancel" id="memCancel">취소</button>
+      <button class="ok" id="memSave">저장</button>
+    </div>
+    <div style="text-align:center; margin-top:14px"><button id="memDelete" style="border:none;background:none;color:var(--use);font-size:13px;font-weight:700;cursor:pointer;display:none">이 고객 삭제</button></div>
+  </div>
+</div>
+
+<!-- 서명 보기 -->
+<div class="sigview" id="sigView">
+  <div class="box">
+    <img id="sigImg" alt="서명" />
+    <div class="cap" id="sigCap"></div>
+    <button class="cls" id="sigClose">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = "https://xnwvogewpcylxadhyrxa.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_PHHLnd7TlayrQANxrkpm4w_4FlD4I-6";
+  const DESIGNERS = ["정소현", "이하늘", "장영원", "조예진", "전영주", "천예은", "오기쁨"];
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const won = n => "₩" + Number(n||0).toLocaleString('ko-KR');
+
+  let members = [];        // {id,name,phone,memo,balance}
+  let cur = null;          // 현재 열린 회원
+  let curTx = [];          // 현재 회원 거래내역
+  let txMode = "charge";   // charge | use
+  let memMode = "new";     // new | edit
+
+  /* ── 인증 (상담/매니저 관리와 동일 계정) ── */
+  const CRED_KEY = "leanon_admin_cred", LOGOUT_KEY = "leanon_admin_logout";
+  const toEmail = v => { v=(v||"").trim(); return v.includes("@") ? v : v+"@leanon.co.kr"; };
+  function saveCreds(id,pw){ try{ localStorage.setItem(CRED_KEY, btoa(unescape(encodeURIComponent(JSON.stringify({id,pw}))))); }catch(_){} }
+  function loadCreds(){ try{ const s=localStorage.getItem(CRED_KEY); return s?JSON.parse(decodeURIComponent(escape(atob(s)))):null; }catch(_){ return null; } }
+  function clearCreds(){ try{ localStorage.removeItem(CRED_KEY); }catch(_){} }
+  function setLogoutFlag(){ try{ localStorage.setItem(LOGOUT_KEY,"1"); }catch(_){} }
+  function clearLogoutFlag(){ try{ localStorage.removeItem(LOGOUT_KEY); }catch(_){} }
+  function loggedOut(){ try{ return localStorage.getItem(LOGOUT_KEY)==="1"; }catch(_){ return false; } }
+  async function doLogin(id,pw){ return await sb.auth.signInWithPassword({ email:toEmail(id), password:pw }); }
+
+  async function init(){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){ showApp(); return; }
+    const saved = loadCreds();
+    if(saved && saved.id){
+      $("email").value=saved.id; $("password").value=saved.pw||""; $("remember").checked=true;
+      if(!loggedOut()){ const { error } = await doLogin(saved.id, saved.pw); if(!error){ showApp(); return; } clearCreds(); }
+    }
+    clearLogoutFlag(); showLogin();
+  }
+  function showLogin(){ $("loginView").style.display="block"; $("appView").style.display="none"; }
+  function showApp(){ $("loginView").style.display="none"; $("appView").style.display="block"; setup(); load(); }
+
+  $("loginBtn").onclick = async () => {
+    $("loginErr").textContent="";
+    const id=$("email").value.trim(), pw=$("password").value;
+    const { error } = await doLogin(id, pw);
+    if(error){ $("loginErr").textContent="로그인 실패: 아이디/비밀번호를 확인해 주세요."; return; }
+    if($("remember").checked) saveCreds(id,pw); else clearCreds();
+    clearLogoutFlag(); showApp();
+  };
+  $("password").addEventListener("keydown", e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+  $("logoutBtn").onclick = async () => {
+    setLogoutFlag(); await sb.auth.signOut();
+    const saved=loadCreds(); if(saved&&saved.id){ $("email").value=saved.id; $("password").value=saved.pw||""; $("remember").checked=true; }
+    showLogin();
+  };
+  $("refreshBtn").onclick = () => load();
+
+  let staffEmail = "";
+  function setup(){
+    $("iDesigner").innerHTML = `<option value="">(선택)</option>` + DESIGNERS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("");
+    // 금액 빠른 입력 칩
+    $("qAmount").innerHTML = [100000,200000,300000,500000,1000000].map(v=>`<button type="button" data-add="${v}">+${(v/10000)}만</button>`).join("");
+    $("qBonus").innerHTML  = [0,10000,30000,50000,100000].map(v=>v===0?`<button type="button" data-set="0">보너스 없음</button>`:`<button type="button" data-add="${v}">+${(v/10000)}만</button>`).join("");
+    $("qAmount").onclick = e=>{ const b=e.target.closest("button"); if(!b)return; $("iAmount").value = (Number($("iAmount").value||0) + Number(b.dataset.add||0)); txPreview(); };
+    $("qBonus").onclick  = e=>{ const b=e.target.closest("button"); if(!b)return; if(b.dataset.set!=null){ $("iBonus").value=b.dataset.set; } else { $("iBonus").value = (Number($("iBonus").value||0)+Number(b.dataset.add||0)); } txPreview(); };
+    sb.auth.getUser().then(({data})=>{ staffEmail = data?.user?.email || ""; });
+  }
+
+  function monthStr(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; }
+
+  /* ── 로드: 회원 + 이번달 집계 ── */
+  async function load(){
+    const { data:mem, error } = await sb.from("pass_members").select("*").order("name",{ascending:true});
+    if(error){ toast("불러오기 실패: "+error.message); return; }
+    members = mem||[];
+    $("sMembers").textContent = members.length + "명";
+    $("sBalance").textContent = won(members.reduce((a,m)=>a+Number(m.balance||0),0));
+    renderList();
+    // 이번달 충전/사용 집계
+    const first = monthStr()+"-01T00:00:00";
+    const { data:tx } = await sb.from("pass_transactions").select("type,amount,bonus,created_at").gte("created_at", first);
+    let c=0,u=0; (tx||[]).forEach(t=>{ if(t.type==="charge") c+=Number(t.amount||0)+Number(t.bonus||0); else u+=Number(t.amount||0); });
+    $("sCharge").textContent = won(c);
+    $("sUse").textContent = won(u);
+  }
+
+  function renderList(){
+    const q = $("search").value.trim().toLowerCase();
+    const list = members.filter(m => !q || (m.name||"").toLowerCase().includes(q) || (m.phone||"").replace(/-/g,"").includes(q.replace(/-/g,"")));
+    if(!list.length){ $("mlist").innerHTML = `<div class="empty">${members.length? "검색 결과가 없습니다." : "등록된 고객이 없습니다.<br>우측 상단 ‘+ 신규 고객’으로 추가하세요."}</div>`; return; }
+    $("mlist").innerHTML = list.map(m=>`
+      <div class="mrow" data-id="${m.id}">
+        <div><div class="nm">${esc(m.name)}</div>${m.phone?`<div class="ph">${esc(m.phone)}</div>`:""}</div>
+        <span class="spacer"></span>
+        <div class="bal">${won(m.balance)}<small>잔액</small></div>
+      </div>`).join("");
+    $("mlist").querySelectorAll(".mrow").forEach(r=> r.onclick = ()=>openMember(r.dataset.id));
+  }
+  $("search").addEventListener("input", renderList);
+
+  /* ── 고객 상세 ── */
+  async function openMember(id){
+    cur = members.find(m=>m.id===id); if(!cur) return;
+    $("dName").textContent = cur.name;
+    $("dPhone").textContent = cur.phone||"";
+    $("dMemo").textContent = cur.memo||"";
+    $("dBalance").textContent = won(cur.balance);
+    $("hist").innerHTML = `<div class="empty">불러오는 중…</div>`;
+    $("detail").classList.add("open");
+    const { data:tx, error } = await sb.from("pass_transactions").select("*").eq("member_id",id).order("created_at",{ascending:false});
+    if(error){ $("hist").innerHTML = `<div class="empty">내역 불러오기 실패</div>`; return; }
+    curTx = tx||[];
+    // 원장 합계로 잔액 재검증 → 캐시 보정
+    const real = curTx.reduce((a,t)=>a+Number(t.delta||0),0);
+    if(real !== Number(cur.balance)){
+      await sb.from("pass_members").update({balance:real}).eq("id",id);
+      cur.balance = real; const mm=members.find(m=>m.id===id); if(mm) mm.balance=real;
+      $("dBalance").textContent = won(real);
+      $("sBalance").textContent = won(members.reduce((a,m)=>a+Number(m.balance||0),0));
+    }
+    renderHist();
+  }
+  function renderHist(){
+    if(!curTx.length){ $("hist").innerHTML = `<div class="empty">아직 거래 내역이 없습니다.</div>`; return; }
+    $("hist").innerHTML = curTx.map(t=>{
+      const isC = t.type==="charge";
+      const dt = new Date(t.created_at);
+      const dstr = `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      const amtTxt = isC
+        ? `+${won(t.amount)}${Number(t.bonus)>0?`<small>보너스 +${won(t.bonus)}</small>`:""}`
+        : `−${won(t.amount)}`;
+      const sub = [t.memo||(isC?"충전":"사용"), t.designer?("· "+t.designer):""].filter(Boolean).join(" ");
+      return `<div class="hrow" data-id="${t.id}">
+        <span class="tag ${t.type}">${isC?"충전":"사용"}</span>
+        <div class="desc"><div class="m">${esc(sub)}</div><div class="d">${dstr} · 잔액 ${won(t.balance_after)}</div></div>
+        <span class="spacer"></span>
+        <div class="amt ${isC?'plus':'minus'}">${amtTxt}</div>
+        ${t.signature?`<button class="signbtn" data-sig="${t.id}">서명</button>`:""}
+        <button class="delx" data-del="${t.id}" title="삭제">×</button>
+      </div>`;
+    }).join("");
+    $("hist").querySelectorAll("[data-sig]").forEach(b=> b.onclick = ()=>{ const t=curTx.find(x=>x.id===b.dataset.sig); if(t) showSig(t); });
+    $("hist").querySelectorAll("[data-del]").forEach(b=> b.onclick = ()=> delTx(b.dataset.del));
+  }
+  $("dBack").onclick = ()=>{ $("detail").classList.remove("open"); cur=null; };
+
+  async function delTx(id){
+    const t = curTx.find(x=>x.id===id); if(!t) return;
+    if(!confirm(`이 ${t.type==="charge"?"충전":"사용"} 내역을 삭제할까요?\n(잔액이 다시 계산됩니다)`)) return;
+    const { error } = await sb.from("pass_transactions").delete().eq("id",id);
+    if(error){ toast("삭제 실패"); return; }
+    await openMember(cur.id); // 재로드 + 잔액 재검증
+    load();
+    toast("삭제됨");
+  }
+
+  /* ── 충전/사용 모달 ── */
+  function openTx(mode){
+    txMode = mode;
+    const isC = mode==="charge";
+    $("txTitle").textContent = isC ? "충전" : "사용";
+    $("txWho").textContent = `${cur.name} · 현재 잔액 ${won(cur.balance)}`;
+    $("lAmount").textContent = isC ? "결제 금액" : "사용(차감) 금액";
+    $("fBonus").hidden = !isC;
+    $("fDesigner").hidden = isC;        // 사용 시에만 담당 디자이너
+    $("lMemo").textContent = isC ? "메모" : "서비스 내용";
+    $("iMemo").placeholder = isC ? "" : "예) 뿌리염색, 클리닉";
+    $("iAmount").value=""; $("iBonus").value=""; $("iMemo").value=""; $("iDesigner").value="";
+    $("txErr").textContent="";
+    $("txSave").className = "ok " + mode;
+    $("txSave").textContent = isC ? "충전 저장" : "사용 저장";
+    $("txModal").classList.add("open");
+    requestAnimationFrame(()=>{ resizeSig(); clearSig(); });
+    txPreview();
+    $("iAmount").focus();
+  }
+  $("dCharge").onclick = ()=>openTx("charge");
+  $("dUse").onclick = ()=>openTx("use");
+  $("txCancel").onclick = ()=> $("txModal").classList.remove("open");
+  ["iAmount","iBonus"].forEach(id=> $(id).addEventListener("input", txPreview));
+
+  function txPreview(){
+    const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
+    const bonus = Math.max(0, Math.floor(Number($("iBonus").value||0)));
+    const bal = Number(cur?.balance||0);
+    if(txMode==="charge"){
+      const credit = amt+bonus, after = bal+credit;
+      $("txPreview").innerHTML =
+        `<div class="pl"><span>결제 금액</span><b>${won(amt)}</b></div>`+
+        (bonus>0?`<div class="pl"><span>적립 보너스</span><b>+${won(bonus)}</b></div>`:"")+
+        `<div class="pl total"><span>충전 금액</span><b>+${won(credit)}</b></div>`+
+        `<div class="pl"><span>충전 후 잔액</span><b>${won(after)}</b></div>`;
+      $("txSave").disabled = !(credit>0);
+    } else {
+      const after = bal-amt, over = after<0;
+      $("txPreview").innerHTML =
+        `<div class="pl"><span>현재 잔액</span><b>${won(bal)}</b></div>`+
+        `<div class="pl"><span>사용(차감)</span><b>−${won(amt)}</b></div>`+
+        `<div class="pl total ${over?'warn':''}"><span>사용 후 잔액</span><b>${over?"잔액 부족":won(after)}</b></div>`;
+      $("txSave").disabled = !(amt>0) || over;
+    }
+  }
+
+  $("txSave").onclick = async ()=>{
+    $("txErr").textContent="";
+    const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
+    const bonus = txMode==="charge" ? Math.max(0, Math.floor(Number($("iBonus").value||0))) : 0;
+    const bal = Number(cur.balance||0);
+    const delta = txMode==="charge" ? (amt+bonus) : (-amt);
+    if(txMode==="charge" && amt+bonus<=0){ $("txErr").textContent="금액을 입력해 주세요."; return; }
+    if(txMode==="use"){
+      if(amt<=0){ $("txErr").textContent="사용 금액을 입력해 주세요."; return; }
+      if(bal-amt<0){ $("txErr").textContent="잔액이 부족합니다."; return; }
+    }
+    if(sigEmpty()){ $("txErr").textContent="고객 서명을 받아 주세요."; return; }
+    const after = bal + delta;
+    const sig = $("sigpad").toDataURL("image/png");
+    $("txSave").disabled = true;
+    const { error } = await sb.from("pass_transactions").insert({
+      member_id: cur.id, type: txMode, amount: amt, bonus: bonus, delta: delta,
+      balance_after: after, memo: $("iMemo").value.trim()||null,
+      designer: txMode==="use" ? ($("iDesigner").value||null) : null,
+      signature: sig, created_by: staffEmail||null
+    });
+    if(error){ $("txErr").textContent="저장 실패: "+error.message; $("txSave").disabled=false; return; }
+    await sb.from("pass_members").update({balance: after}).eq("id", cur.id);
+    cur.balance = after; const mm=members.find(m=>m.id===cur.id); if(mm) mm.balance=after;
+    $("txModal").classList.remove("open");
+    $("dBalance").textContent = won(after);
+    toast(txMode==="charge" ? "충전 완료" : "사용 처리 완료");
+    await openMember(cur.id); load();
+  };
+
+  /* ── 신규 / 정보수정 ── */
+  $("newBtn").onclick = ()=>{
+    memMode="new"; $("memTitle").textContent="신규 고객";
+    $("mName").value=""; $("mPhone").value=""; $("mMemo").value=""; $("memErr").textContent="";
+    $("memDelete").style.display="none";
+    $("memModal").classList.add("open"); $("mName").focus();
+  };
+  $("dEdit").onclick = ()=>{
+    memMode="edit"; $("memTitle").textContent="정보 수정";
+    $("mName").value=cur.name||""; $("mPhone").value=cur.phone||""; $("mMemo").value=cur.memo||""; $("memErr").textContent="";
+    $("memDelete").style.display="inline";
+    $("memModal").classList.add("open");
+  };
+  $("memCancel").onclick = ()=> $("memModal").classList.remove("open");
+  $("memSave").onclick = async ()=>{
+    const name=$("mName").value.trim();
+    if(!name){ $("memErr").textContent="이름을 입력해 주세요."; return; }
+    const payload = { name, phone:$("mPhone").value.trim()||null, memo:$("mMemo").value.trim()||null };
+    $("memSave").disabled=true;
+    if(memMode==="new"){
+      const { data, error } = await sb.from("pass_members").insert({...payload, balance:0}).select().single();
+      $("memSave").disabled=false;
+      if(error){ $("memErr").textContent="저장 실패: "+error.message; return; }
+      $("memModal").classList.remove("open");
+      await load(); openMember(data.id); toast("고객 등록됨");
+    } else {
+      const { error } = await sb.from("pass_members").update(payload).eq("id",cur.id);
+      $("memSave").disabled=false;
+      if(error){ $("memErr").textContent="저장 실패: "+error.message; return; }
+      Object.assign(cur,payload); const mm=members.find(m=>m.id===cur.id); if(mm) Object.assign(mm,payload);
+      $("memModal").classList.remove("open");
+      $("dName").textContent=cur.name; $("dPhone").textContent=cur.phone||""; $("dMemo").textContent=cur.memo||"";
+      renderList(); toast("수정됨");
+    }
+  };
+  $("memDelete").onclick = async ()=>{
+    if(!confirm(`'${cur.name}' 고객을 삭제할까요?\n충전·사용 내역이 모두 삭제됩니다. (되돌릴 수 없음)`)) return;
+    const { error } = await sb.from("pass_members").delete().eq("id",cur.id);
+    if(error){ toast("삭제 실패"); return; }
+    $("memModal").classList.remove("open"); $("detail").classList.remove("open"); cur=null;
+    load(); toast("고객 삭제됨");
+  };
+
+  /* ── 서명 패드 ── */
+  const pad = $("sigpad"); let pctx, drawing=false, drawn=false, last=null;
+  function resizeSig(){
+    const r = pad.getBoundingClientRect(); const dpr = window.devicePixelRatio||1;
+    pad.width = Math.round(r.width*dpr); pad.height = Math.round(r.height*dpr);
+    pctx = pad.getContext("2d"); pctx.scale(dpr,dpr); pctx.lineWidth=2.5; pctx.lineCap="round"; pctx.lineJoin="round"; pctx.strokeStyle="#1c1a17";
+  }
+  function posOf(e){ const r=pad.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
+  function clearSig(){ if(pctx) pctx.clearRect(0,0,pad.width,pad.height); drawn=false; }
+  function sigEmpty(){ return !drawn; }
+  pad.addEventListener("pointerdown", e=>{ e.preventDefault(); drawing=true; drawn=true; last=posOf(e); pad.setPointerCapture(e.pointerId); });
+  pad.addEventListener("pointermove", e=>{ if(!drawing)return; const p=posOf(e); pctx.beginPath(); pctx.moveTo(last.x,last.y); pctx.lineTo(p.x,p.y); pctx.stroke(); last=p; });
+  pad.addEventListener("pointerup", ()=> drawing=false);
+  pad.addEventListener("pointercancel", ()=> drawing=false);
+  $("sigClear").onclick = clearSig;
+  window.addEventListener("resize", ()=>{ if($("txModal").classList.contains("open")){ const d=sigEmpty(); resizeSig(); if(!d){} clearSig(); } });
+
+  /* ── 서명 보기 ── */
+  function showSig(t){
+    $("sigImg").src = t.signature;
+    const dt=new Date(t.created_at);
+    $("sigCap").textContent = `${cur.name} · ${t.type==="charge"?"충전":"사용"} ${won(t.amount)} · ${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    $("sigView").classList.add("open");
+  }
+  $("sigClose").onclick = ()=> $("sigView").classList.remove("open");
+  $("sigView").onclick = e=>{ if(e.target===$("sigView")) $("sigView").classList.remove("open"); };
+
+  function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1900); }
+
+  init();
+</script>
+</body>
+</html>
