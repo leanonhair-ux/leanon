@@ -18,6 +18,7 @@ create table if not exists pass_transactions (
   type          text not null check (type in ('charge','use')),
   amount        integer not null default 0,  -- charge: 결제금액 / use: 차감금액
   bonus         integer not null default 0,  -- charge: 적립 보너스
+  carry         integer not null default 0,  -- charge: 잔여 지류정액권 이월(보너스 없음)
   delta         integer not null,            -- 잔액 변동 (charge:+(amount+bonus) / use:-amount)
   balance_after integer not null,            -- 거래 직후 잔액 스냅샷
   memo          text,

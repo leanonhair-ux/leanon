@@ -263,6 +263,10 @@
         <label>적립 보너스 (결제 금액의 10% 자동)</label>
         <input id="iBonus" class="amtin" type="number" readonly tabindex="-1" placeholder="0" style="background:#f2efe9; color:var(--muted)" />
       </div>
+      <div class="field" id="fCarry">
+        <label>잔여 지류정액권 이월 <small style="font-weight:600;color:var(--muted)">(종이 정액권 남은 금액, 보너스 없음)</small></label>
+        <input id="iCarry" class="amtin" type="number" inputmode="numeric" placeholder="0" />
+      </div>
       <div class="field" id="fChargeDesigner">
         <label>담당 디자이너</label>
         <select id="iChargeDesigner"></select>
@@ -504,14 +508,17 @@
       const isC = t.type==="charge";
       const dt = new Date(t.created_at);
       const dstr = `${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,'0')}.${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-      const amtTxt = isC
-        ? `+${won(t.amount)}${Number(t.bonus)>0?`<small>보너스 +${won(t.bonus)}</small>`:""}`
-        : `−${won(t.amount)}`;
+      const amtTxt = isC ? `+${won(t.delta!=null?t.delta:t.amount)}` : `−${won(t.amount)}`;
       let descHtml;
-      if(!isC && Array.isArray(t.items) && t.items.length){
+      if(isC){
+        const parts = [`결제 ${won(t.amount)}`];
+        if(Number(t.bonus)>0) parts.push(`보너스 +${won(t.bonus)}`);
+        if(Number(t.carry)>0) parts.push(`지류이월 +${won(t.carry)}`);
+        descHtml = esc(parts.join(" · ") + (t.memo?` · ${t.memo}`:"") + (t.designer?` · ${t.designer}`:""));
+      } else if(Array.isArray(t.items) && t.items.length){
         descHtml = t.items.map(it=>`${esc(it.service)} · ${esc(it.designer||"-")} <b style="font-weight:800">${won(it.amount)}</b>`).join("<br>");
       } else {
-        descHtml = esc([t.memo||(isC?"충전":"사용"), t.designer?("· "+t.designer):""].filter(Boolean).join(" "));
+        descHtml = esc([t.memo||"사용", t.designer?("· "+t.designer):""].filter(Boolean).join(" "));
       }
       return `<div class="hrow" data-id="${t.id}">
         <span class="tag ${t.type}">${isC?"충전":"사용"}</span>
@@ -575,7 +582,7 @@
     $("txTitle").textContent = isC ? "충전" : "사용";
     $("txWho").textContent = `${cur.name} · 현재 잔액 ${won(cur.balance)}`;
     if(isC){
-      $("iAmount").value=""; $("iBonus").value=""; $("iMemo").value="";
+      $("iAmount").value=""; $("iBonus").value=""; $("iMemo").value=""; $("iCarry").value="";
       $("iChargeDesigner").value = cur.designer || "";
       $("useToggle").checked = false; $("useList").innerHTML="";
       renderTerms();
@@ -591,6 +598,7 @@
   $("txCancel").onclick = ()=> $("txModal").classList.remove("open");
   $("useToggle").onchange = updateTxUI;
   $("iAmount").addEventListener("input", txPreview);
+  $("iCarry").addEventListener("input", txPreview);
   $("iChargeDesigner").addEventListener("change", ()=>{ // 담당 변경 시 아직 비어있는 사용 항목 디자이너에 반영
     if(useActive()) $("useList").querySelectorAll(".uitem").forEach(r=>{ const s=r.querySelector(".uiDesigner"); if(!s.value) s.value=$("iChargeDesigner").value||""; });
     txPreview();
@@ -600,12 +608,14 @@
     const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
     const bal = Number(cur?.balance||0);
     const bonus = txMode==="charge" ? Math.floor(amt*0.1) : 0;   // 보너스 = 결제금액 10% 고정
+    const carry = txMode==="charge" ? Math.max(0, Math.floor(Number($("iCarry").value||0))) : 0;  // 지류 이월(보너스 없음)
     if(txMode==="charge") $("iBonus").value = bonus;
     if(txMode==="charge"){
-      const credit = amt+bonus, afterCharge = bal+credit;
+      const credit = amt+bonus+carry, afterCharge = bal+credit;
       let html =
         `<div class="pl"><span>결제 금액</span><b>${won(amt)}</b></div>`+
         (bonus>0?`<div class="pl"><span>적립 보너스</span><b>+${won(bonus)}</b></div>`:"")+
+        (carry>0?`<div class="pl"><span>지류정액권 이월</span><b>+${won(carry)}</b></div>`:"")+
         `<div class="pl total"><span>충전 금액</span><b>+${won(credit)}</b></div>`+
         `<div class="pl"><span>충전 후 잔액</span><b>${won(afterCharge)}</b></div>`;
       if(useActive()){
@@ -650,9 +660,10 @@
     if(txMode==="charge"){
       const amt = Math.max(0, Math.floor(Number($("iAmount").value||0)));
       const bonus = Math.floor(amt*0.1);                 // 보너스 = 결제금액 10% 고정
-      if(amt+bonus<=0){ err("금액을 입력해 주세요."); return; }
+      const carry = Math.max(0, Math.floor(Number($("iCarry").value||0)));  // 지류 이월
+      if(amt+bonus+carry<=0){ err("금액을 입력해 주세요."); return; }
       chargeDesigner = $("iChargeDesigner").value || cur.designer || null;
-      chargeRow = { type:"charge", amount:amt, bonus:bonus, delta:amt+bonus,
+      chargeRow = { type:"charge", amount:amt, bonus:bonus, carry:carry, delta:amt+bonus+carry,
                     memo:$("iMemo").value.trim()||null, designer:chargeDesigner, items:null };
       if(useActive()){                                   // '오늘 바로 사용'
         const items = readItems().filter(it=>it.amount>0);
@@ -679,7 +690,7 @@
     if(useRow){    running += useRow.delta;    rows.push({...useRow,    balance_after:running}); }
     for(const r of rows){
       const { error } = await sb.from("pass_transactions").insert({
-        member_id: cur.id, type:r.type, amount:r.amount, bonus:r.bonus, delta:r.delta,
+        member_id: cur.id, type:r.type, amount:r.amount, bonus:r.bonus, carry:r.carry||0, delta:r.delta,
         balance_after:r.balance_after, memo:r.memo, designer:r.designer, items:r.items,
         signature: sig, created_by: staffEmail||null
       });
